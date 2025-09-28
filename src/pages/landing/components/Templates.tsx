@@ -1,27 +1,65 @@
-import React from 'react'
+// src/apps/landing/components/Templates.tsx
+import React from "react";
 
 const Templates: React.FC = () => {
-  const templates = [
-    { id: 't1', title: 'Sprint Planning' },
-    { id: 't2', title: 'Weekly Meeting' },
-    { id: 't3', title: 'Project Onboarding' },
-  ]
-
   return (
-    <section aria-labelledby="templates-title" className="landing-templates">
-      <div className="container bg-pink-800">
-        <h2 id="templates-title">Plantillas</h2>
-        <div className="templates-grid">
-          {templates.map((tpl) => (
-            <article key={tpl.id} className="template-card">
-              <h3>{tpl.title}</h3>
-              <p>Descripción breve de la plantilla.</p>
-            </article>
-          ))}
+    <section className="w-full py-20 px-6 md:px-20 bg-gray-50">
+      <div className="max-w-6xl mx-auto text-center">
+        <h2 className="text-3xl md:text-4xl font-bold text-gray-900">
+          Explora nuestros templates
+        </h2>
+        <p className="mt-4 text-lg text-gray-600 max-w-2xl mx-auto">
+          Diseñados para ayudarte a iniciar rápidamente con interfaces modernas
+          y funcionales.
+        </p>
+
+        {/* Grid de tarjetas */}
+        <div className="mt-12 grid grid-cols-1 md:grid-cols-3 gap-8">
+          <div className="bg-white rounded-xl shadow-md hover:shadow-lg transition p-6 flex flex-col items-center">
+            <img
+              src="/src/assets/placeholder.svg"
+              alt="Template 1"
+              className="w-32 h-32 object-contain opacity-70"
+            />
+            <h3 className="mt-4 text-xl font-semibold text-gray-800">
+              Template 1
+            </h3>
+            <p className="mt-2 text-gray-500 text-sm">
+              Ideal para landing pages con enfoque en producto.
+            </p>
+          </div>
+
+          <div className="bg-white rounded-xl shadow-md hover:shadow-lg transition p-6 flex flex-col items-center">
+            <img
+              src="/src/assets/placeholder.svg"
+              alt="Template 2"
+              className="w-32 h-32 object-contain opacity-70"
+            />
+            <h3 className="mt-4 text-xl font-semibold text-gray-800">
+              Template 2
+            </h3>
+            <p className="mt-2 text-gray-500 text-sm">
+              Perfecto para startups y servicios digitales.
+            </p>
+          </div>
+
+          <div className="bg-white rounded-xl shadow-md hover:shadow-lg transition p-6 flex flex-col items-center">
+            <img
+              src="/src/assets/placeholder.svg"
+              alt="Template 3"
+              className="w-32 h-32 object-contain opacity-70"
+            />
+            <h3 className="mt-4 text-xl font-semibold text-gray-800">
+              Template 3
+            </h3>
+            <p className="mt-2 text-gray-500 text-sm">
+              Minimalista y versátil para cualquier proyecto.
+            </p>
+          </div>
         </div>
       </div>
     </section>
-  )
-}
+  );
+};
 
-export default Templates
+export default Templates;
