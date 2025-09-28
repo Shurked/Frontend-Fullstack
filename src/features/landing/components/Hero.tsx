@@ -1,8 +1,8 @@
-import { useState } from "react";
+import React from "react";
 
-const Hero = () => {
+const Hero: React.FC = () => {
   return (
-    <section className="relative bg-[#4931A9] overflow-hidden">
+    <section className="relative bg-[#4931A9] overflow-hidden min-h-screen flex items-center">
       <div className="max-w-7xl mx-auto px-4 py-20 relative z-10">
         {/* Navbar */}
         <nav className="w-full flex items-center justify-between px-7 py-4 bg-white rounded-b-xl shadow-md max-w-[700px] mt-6 ml-6">

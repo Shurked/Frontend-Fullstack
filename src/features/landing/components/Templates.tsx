@@ -1,9 +1,8 @@
-// src/apps/landing/components/Templates.tsx
 import React from "react";
 
 const Templates: React.FC = () => {
   return (
-    <section className="w-full py-20 px-6 md:px-20 bg-gray-50">
+    <section id="plantillas" className="w-full py-20 px-6 md:px-20 bg-gray-50 min-h-screen flex items-center">
       <div className="max-w-6xl mx-auto text-center">
         <h2 className="text-3xl md:text-4xl font-bold text-gray-900">
           Explora nuestros templates

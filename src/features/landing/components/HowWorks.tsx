@@ -1,6 +1,8 @@
-const HowWorks = () => {
+import React from "react";
+
+const HowWorks: React.FC = () => {
   return (
-    <section id="como-funciona" className="bg-white px-4 py-16">
+    <section id="como-funciona" className="bg-white px-4 py-16 min-h-screen flex items-center">
       <div className="max-w-7xl mx-auto">
         <div className="text-left mb-4">
           <span className="text-[#FFAB00] text-sm font-semibold tracking-wider">

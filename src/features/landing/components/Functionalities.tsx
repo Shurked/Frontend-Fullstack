@@ -1,11 +1,11 @@
-import { useState } from "react";
+import React, { useState } from "react";
 
 interface Feature {
   id: number;
   title: string;
 }
 
-const Functionalities = () => {
+const Functionalities: React.FC = () => {
   const [selected, setSelected] = useState<number | null>(null);
 
   const features: Feature[] = [
@@ -15,7 +15,7 @@ const Functionalities = () => {
   ];
 
   return (
-    <section id="funcionalidades" className="bg-[#F4F5F7] px-4 py-16">
+    <section id="funcionalidades" className="bg-[#F4F5F7] px-4 py-16 min-h-screen flex items-center">
       <div className="max-w-7xl mx-auto">
         <div className="text-left mb-4">
           <span className="text-[#FFAB00] text-sm font-semibold tracking-wider">

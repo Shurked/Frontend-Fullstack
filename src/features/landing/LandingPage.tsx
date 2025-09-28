@@ -22,7 +22,7 @@ const LandingPage: React.FC = () => {
       <Templates />
 
       {/* Final CTA Section */}
-      <section className="relative bg-[#4931A9] overflow-hidden">
+      <section className="relative bg-[#4931A9] overflow-hidden min-h-screen flex items-center">
         {/* Geometric Shapes */}
         <div className="absolute inset-0">
           <svg className="absolute top-0 right-0 w-64 h-64 opacity-10" viewBox="0 0 200 200" fill="none">

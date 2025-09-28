@@ -1,9 +1,8 @@
-// src/apps/landing/components/Footer.tsx
 import React from "react";
 
 const Footer: React.FC = () => {
   return (
-    <footer className="w-full bg-white py-8 px-8 mt-auto">
+    <footer className="w-full bg-white py-8 px-8 mt-auto min-h-screen flex items-center">
         <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2">
             <img
