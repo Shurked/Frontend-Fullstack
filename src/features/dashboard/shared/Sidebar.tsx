@@ -1,17 +1,11 @@
 
 import React, { useState } from 'react';
 import {
-  Search,
-  Bell,
-  User,
-  Settings,
-  LogOut,
   Home,
   FolderOpen,
   FileText,
   Users,
-  Calendar,
-  Menu
+  Calendar
 } from 'lucide-react';
 import { NavLink } from 'react-router-dom';
 
@@ -34,7 +28,7 @@ const Sidebar = () => {
   return (
     <div className={`${sidebarExpanded ? 'w-64' : 'w-16'} bg-white border-r border-gray-200 transition-all duration-300 flex flex-col h-screen`}>
       {/* Logo y botón de colapso */}
-      <div className="flex items-center justify-between p-4 border-b border-gray-200">
+      <div className="flex items-center justify-between p-5.5 border-b border-gray-200">
         <div className={`flex items-center ${sidebarExpanded ? 'space-x-3' : 'justify-center'}`}>
           <img
             src="/kuska-logo.webp"
@@ -49,19 +43,32 @@ const Sidebar = () => {
             <span className="text-lg font-semibold text-gray-800">Kuska</span>
           )}
         </div>
+
         <button
           onClick={toggleSidebar}
           className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
         >
           {sidebarExpanded ? (
-            <svg className="w-4 h-4 text-gray-600" viewBox="0 0 24 24" fill="none">
-              <path d="M3 6h18M3 12h18M3 18h18" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-              <path d="M15 6l-6 6 6 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+            // Ícono cuando sidebar está expandido (flecha hacia izquierda)
+            <svg className="w-5 h-5 text-gray-600" viewBox="0 0 24 24" fill="none">
+              {/* Rectángulo dividido en dos secciones */}
+              <rect x="3" y="4" width="18" height="16" rx="2" stroke="currentColor" strokeWidth="1.5" fill="none" />
+              {/* Sección izquierda sólida */}
+              <rect x="5" y="6" width="4" height="12" fill="currentColor" />
+              {/* Sección derecha con trazo central */}
+              <line x1="14" y1="12" x2="18" y2="12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
             </svg>
           ) : (
-            <svg className="w-4 h-4 text-gray-600" viewBox="0 0 24 24" fill="none">
-              <path d="M3 6h18M3 12h18M3 18h18" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-              <path d="M9 6l6 6-6 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+            // Ícono cuando sidebar está colapsado (hamburguesa minimalista)
+            <svg className="w-5 h-5 text-gray-600" viewBox="0 0 24 24" fill="none">
+              {/* Rectángulo dividido en dos secciones */}
+              <rect x="3" y="4" width="18" height="16" rx="2" stroke="currentColor" strokeWidth="1.5" fill="none" />
+              {/* Sección izquierda sólida */}
+              <rect x="5" y="6" width="4" height="12" fill="currentColor" />
+              {/* Sección derecha con tres trazos (hamburguesa) */}
+              <line x1="12" y1="8" x2="18" y2="8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+              <line x1="12" y1="12" x2="18" y2="12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+              <line x1="12" y1="16" x2="18" y2="16" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
             </svg>
           )}
         </button>
@@ -75,39 +82,25 @@ const Sidebar = () => {
           return (
             <div key={item.path}>
 
-                {/* PARA TU PROYECTO REAL: Reemplaza este div por NavLink: */}
-
-                <NavLink
-                  to={item.path}
-                  className={({ isActive }) =>
-                    `w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors relative ${
-                      isActive
-                        ? 'bg-[#4931A9] text-white'
-                        : 'text-[#172B4D] hover:bg-[#F4F5F7] hover:text-[#172B4D]'
-                    }`
-                  }
-                >
-                  {({ isActive }) => (
-                    <>
-                      {isActive && (
-                        <div className="absolute left-0 top-0 bottom-0 w-1 bg-white rounded-r-full"></div>
-                      )}
-                      <Icon className={`w-5 h-5 ${sidebarExpanded ? '' : 'mx-auto'}`} />
-                      {sidebarExpanded && <span className="font-medium">{item.label}</span>}
-                    </>
-                  )}
-                </NavLink>
-
-
-              {/* Demo con botón (solo para mostrar el diseño) */}
-              {/* <button
-                className="w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors relative text-[#172B4D] hover:bg-[#F4F5F7] hover:text-[#172B4D]"
+              <NavLink
+                to={item.path}
+                className={({ isActive }) =>
+                  `w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors relative ${isActive
+                    ? 'bg-[#4931A9] text-white'
+                    : 'text-[#172B4D] hover:bg-[#F4F5F7] hover:text-[#172B4D]'
+                  }`
+                }
               >
-                <Icon className={`w-5 h-5 ${sidebarExpanded ? '' : 'mx-auto'}`} />
-                {sidebarExpanded && (
-                  <span className="font-medium">{item.label}</span>
+                {({ isActive }) => (
+                  <>
+                    {isActive && (
+                      <div className="absolute left-0 top-0 bottom-0 w-1 bg-white rounded-r-full"></div>
+                    )}
+                    <Icon className={`w-5 h-5 ${sidebarExpanded ? '' : 'mx-auto'}`} />
+                    {sidebarExpanded && <span className="font-medium">{item.label}</span>}
+                  </>
                 )}
-              </button> */}
+              </NavLink>
             </div>
           );
         })}
