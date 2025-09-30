@@ -1,155 +1,246 @@
-import React, { useState } from 'react';
-import { X, Users, FileText, Palette } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { X, ChevronDown } from 'lucide-react';
+
+interface TeamMember {
+  id: string;
+  name: string;
+  role: string;
+  avatar?: string;
+}
+
+interface Team {
+  id: string;
+  name: string;
+  description: string;
+  color: string;
+  members: TeamMember[];
+}
 
 interface CreateTeamModalProps {
   isOpen: boolean;
   onClose: () => void;
+  editTeam?: Team;
+  onSave?: (team: Omit<Team, 'id'>) => void;
 }
 
-const CreateTeamModal: React.FC<CreateTeamModalProps> = ({ isOpen, onClose }) => {
+const CreateTeamModal: React.FC<CreateTeamModalProps> = ({ isOpen, onClose, editTeam, onSave }) => {
   const [formData, setFormData] = useState({
     name: '',
-    description: '',
-    color: 'bg-blue-500'
+    emails: '',
+    role: 'Administrador'
   });
 
-  const colors = [
-    { value: 'bg-blue-500', name: 'Azul' },
-    { value: 'bg-green-500', name: 'Verde' },
-    { value: 'bg-purple-500', name: 'Morado' },
-    { value: 'bg-red-500', name: 'Rojo' },
-    { value: 'bg-yellow-500', name: 'Amarillo' },
-    { value: 'bg-pink-500', name: 'Rosa' },
-    { value: 'bg-indigo-500', name: 'Índigo' },
-    { value: 'bg-gray-500', name: 'Gris' }
+  const [members, setMembers] = useState<TeamMember[]>([]);
+
+  const isEditMode = !!editTeam;
+
+  // Cargar datos del equipo cuando esté en modo edición
+  useEffect(() => {
+    if (editTeam) {
+      setFormData({
+        name: editTeam.name,
+        emails: '',
+        role: 'Administrador'
+      });
+      setMembers(editTeam.members || []);
+    } else {
+      setFormData({
+        name: '',
+        emails: '',
+        role: 'Administrador'
+      });
+      setMembers([]);
+    }
+  }, [editTeam, isOpen]);
+
+  const roles = [
+    'Administrador',
+    'Editor',
+    'Colaborador',
+    'Visualizador'
   ];
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    // Aquí se crearía el equipo
-    console.log('Creating team:', formData);
-    onClose();
-    setFormData({ name: '', description: '', color: 'bg-blue-500' });
+    
+    if (onSave) {
+      onSave({
+        name: formData.name,
+        description: '',
+        color: 'bg-blue-500',
+        members: members
+      });
+    } else {
+      console.log(isEditMode ? 'Updating team:' : 'Creating team:', {
+        name: formData.name,
+        members: members,
+        newEmails: formData.emails,
+        role: formData.role
+      });
+    }
+    
+    handleClose();
   };
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value
-    });
+  const handleClose = () => {
+    onClose();
+    if (!isEditMode) {
+      setFormData({ name: '', emails: '', role: 'Administrador' });
+      setMembers([]);
+    }
+  };
+
+  const handleChange = (field: string, value: string) => {
+    setFormData(prev => ({
+      ...prev,
+      [field]: value
+    }));
+  };
+
+  const handleRemoveMember = (memberId: string) => {
+    setMembers(prev => prev.filter(member => member.id !== memberId));
   };
 
   if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg shadow-xl w-full max-w-md mx-4">
+      <div className="bg-white rounded-lg shadow-xl w-full max-w-4xl mx-4">
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-gray-200">
-          <h2 className="text-lg font-semibold text-gray-900">Crear Nuevo Equipo</h2>
+          <h2 className="text-xl font-semibold text-gray-900">
+            {isEditMode ? 'Editar equipo' : 'Crear un nuevo equipo'}
+          </h2>
           <button
-            onClick={onClose}
+            onClick={handleClose}
             className="p-1 text-gray-400 hover:text-gray-600 rounded"
           >
-            <X className="w-5 h-5" />
+            <X className="w-6 h-6" />
           </button>
         </div>
 
         {/* Content */}
-        <form onSubmit={handleSubmit} className="p-6 space-y-4">
-          {/* Nombre del equipo */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Nombre del equipo
-            </label>
-            <div className="relative">
-              <Users className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-              <input
-                type="text"
-                name="name"
-                value={formData.name}
-                onChange={handleChange}
-                placeholder="Ej: Equipo de desarrollo"
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#4931A9] focus:border-transparent"
-                required
-              />
-            </div>
-          </div>
-
-          {/* Descripción */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Descripción
-            </label>
-            <div className="relative">
-              <FileText className="absolute left-3 top-3 text-gray-400 w-4 h-4" />
-              <textarea
-                name="description"
-                value={formData.description}
-                onChange={handleChange}
-                placeholder="Describe el propósito y objetivos del equipo"
-                rows={3}
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#4931A9] focus:border-transparent resize-none"
-              />
-            </div>
-          </div>
-
-          {/* Color del equipo */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              <Palette className="inline w-4 h-4 mr-1" />
-              Color del equipo
-            </label>
-            <div className="grid grid-cols-4 gap-2">
-              {colors.map((color) => (
-                <button
-                  key={color.value}
-                  type="button"
-                  onClick={() => setFormData({ ...formData, color: color.value })}
-                  className={`w-12 h-12 ${color.value} rounded-lg border-2 transition-all ${
-                    formData.color === color.value
-                      ? 'border-gray-800 scale-110'
-                      : 'border-gray-300 hover:border-gray-400'
-                  }`}
-                  title={color.name}
+        <div className="p-6">
+          <form onSubmit={handleSubmit} className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            
+            {/* Left Column - Form Fields */}
+            <div className="space-y-6">
+              {/* Nombre del equipo */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Nombre de equipo
+                </label>
+                <input
+                  type="text"
+                  value={formData.name}
+                  onChange={(e) => handleChange('name', e.target.value)}
+                  placeholder="Kuska Team"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#4931A9] focus:border-transparent text-gray-900 placeholder-gray-400"
+                  required
                 />
-              ))}
-            </div>
-          </div>
-
-          {/* Preview */}
-          <div className="pt-2">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Vista previa
-            </label>
-            <div className="border border-gray-200 rounded-lg p-3">
-              <div className={`h-16 ${formData.color} rounded-lg flex items-center justify-center mb-2`}>
-                <Users className="w-6 h-6 text-white" />
               </div>
-              <h3 className="font-medium text-gray-900">{formData.name || 'Nombre del equipo'}</h3>
-              <p className="text-sm text-gray-600 mt-1">
-                {formData.description || 'Descripción del equipo'}
-              </p>
-            </div>
-          </div>
 
-          {/* Buttons */}
-          <div className="flex justify-end space-x-3 pt-4">
-            <button
-              type="button"
-              onClick={onClose}
-              className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
-            >
-              Cancelar
-            </button>
-            <button
-              type="submit"
-              className="px-4 py-2 bg-[#4931A9] text-white rounded-lg hover:bg-[#3f2890] transition-colors"
-            >
-              Crear Equipo
-            </button>
-          </div>
-        </form>
+              {/* Nombres o email */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Nombres o email
+                </label>
+                <textarea
+                  value={formData.emails}
+                  onChange={(e) => handleChange('emails', e.target.value)}
+                  placeholder="e.g., Jorge, jorge@gmail.com"
+                  rows={4}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#4931A9] focus:border-transparent resize-none text-gray-900 placeholder-gray-400"
+                />
+              </div>
+
+              {/* Rol */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Rol
+                </label>
+                <div className="relative">
+                  <select
+                    value={formData.role}
+                    onChange={(e) => handleChange('role', e.target.value)}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#4931A9] focus:border-transparent appearance-none bg-white text-gray-700"
+                  >
+                    {roles.map((role) => (
+                      <option key={role} value={role}>
+                        {role}
+                      </option>
+                    ))}
+                  </select>
+                  <ChevronDown className="absolute right-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none" />
+                </div>
+              </div>
+            </div>
+
+            {/* Right Column - Members List */}
+            <div>
+              <div className="border border-gray-200 rounded-lg p-4 h-full">
+                <h3 className="font-medium text-gray-900 mb-4">
+                  {isEditMode ? 'Miembros actuales' : 'Vista previa de miembros'}
+                </h3>
+                
+                {members.length > 0 ? (
+                  <div className="space-y-3">
+                    {members.map((member) => (
+                      <div
+                        key={member.id}
+                        className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
+                      >
+                        <div className="flex items-center space-x-3">
+                          <div className="w-10 h-10 bg-orange-500 rounded-full flex items-center justify-center">
+                            <span className="text-white font-medium text-sm">
+                              {member.name.split(' ').map(n => n[0]).join('')}
+                            </span>
+                          </div>
+                          <div>
+                            <p className="font-medium text-gray-900">{member.name}</p>
+                            <p className="text-sm text-gray-500">{member.role}</p>
+                          </div>
+                        </div>
+                        {isEditMode && (
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveMember(member.id)}
+                            className="p-1 text-gray-400 hover:text-red-600"
+                          >
+                            <X className="w-4 h-4" />
+                          </button>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-8 text-gray-500">
+                    <p className="text-sm">
+                      {isEditMode ? 'No hay miembros en este equipo' : 'Los miembros aparecerán aquí'}
+                    </p>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Buttons */}
+            <div className="lg:col-span-2 flex justify-end space-x-3 pt-4">
+              <button
+                type="button"
+                onClick={handleClose}
+                className="px-6 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+              >
+                Cancelar
+              </button>
+              <button
+                type="submit"
+                className="px-6 py-2 bg-[#4931A9] text-white rounded-lg hover:bg-[#3f2890] transition-colors"
+              >
+                Crear
+              </button>
+            </div>
+          </form>
+        </div>
       </div>
     </div>
   );
