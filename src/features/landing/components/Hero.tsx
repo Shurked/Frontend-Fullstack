@@ -2,62 +2,24 @@ import React from "react";
 
 const Hero: React.FC = () => {
   return (
-    <section className="relative bg-[#4931A9] overflow-hidden min-h-screen flex items-center">
-      <div className="max-w-7xl mx-auto px-4 py-20 relative z-10">
-        {/* Navbar */}
-        <nav className="w-full flex items-center justify-between px-7 py-4 bg-white rounded-b-xl shadow-md max-w-[700px] mt-6 ml-6">
-          <div className="flex items-center gap-2">
-            <img
-              src="/src/assets/placeholder.svg"
-              alt="Logo"
-              className="w-8 h-8 rounded-md"
-            />
-          </div>
-          <ul className="flex gap-8">
-            <li>
-              <a href="#como-funciona" className="text-[#172B4D] font-medium text-base hover:underline">
-                Cómo funciona
-              </a>
-            </li>
-            <li>
-              <a href="#funcionalidades" className="text-[#172B4D] font-medium text-base hover:underline">
-                Funcionalidades
-              </a>
-            </li>
-            <li>
-              <a href="#plantillas" className="text-[#172B4D] font-medium text-base hover:underline">
-                Plantillas
-              </a>
-            </li>
-          </ul>
-          <div className="flex gap-2">
-            <button className="w-8 h-8 flex items-center justify-center rounded-full border border-[#E5E7EB] text-[#172B4D]">
-              <span className="sr-only">Modo claro/oscuro</span>
-              <svg width="18" height="18" fill="none">
-                <circle cx="9" cy="9" r="8" stroke="#7A869A" strokeWidth="2" />
-              </svg>
-            </button>
-            <button className="w-8 h-8 flex items-center justify-center rounded-full border border-[#E5E7EB] text-[#172B4D]">
-              <span className="sr-only">Idioma</span>
-              <svg width="18" height="18" fill="none">
-                <rect
-                  x="3"
-                  y="3"
-                  width="12"
-                  height="12"
-                  rx="2"
-                  stroke="#7A869A"
-                  strokeWidth="2"
-                />
-              </svg>
-            </button>
-          </div>
-        </nav>
+    <section className="relative bg-[#4931A9] overflow-hidden min-h-screen">
+      {/* Imagen de la derecha - Oculta en móviles (lg:block) */}
+      <div className="hidden lg:block absolute top-0 right-0 w-1/4 h-[90vh] z-40">
+        <div className="bg-[#F4F5F7] w-full h-full rounded-bl-3xl shadow-lg flex items-center justify-center">
+          <img
+            src="/src/assets/placeholder.svg"
+            alt="Ilustración principal"
+            className="w-48 h-48 object-contain opacity-60"
+          />
+        </div>
+      </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-20 pb-20 relative z-10">
+        <div className="flex items-center min-h-[calc(100vh-200px)] lg:pr-[26%]">
+
           {/* Left Content */}
-          <div className="text-white">
-            <h1 className="text-4xl lg:text-5xl xl:text-6xl font-bold leading-tight mb-6">
+          <div className="text-white max-w-2xl w-full">
+            <h1 className="text-4xl sm:text-5xl lg:text-5xl xl:text-6xl font-bold leading-tight mb-6">
               Conecta equipos,<br />
               proyectos y tareas con
               <span className="relative inline-block">
@@ -77,7 +39,7 @@ const Hero: React.FC = () => {
               </span>
             </h1>
 
-            <p className="text-lg lg:text-xl text-white/90 mb-8 max-w-lg leading-relaxed">
+            <p className="text-lg sm:text-xl lg:text-xl text-white/90 mb-8 max-w-lg leading-relaxed">
               Regístrate para disfrutar de "KUSKA" completamente
             </p>
 
@@ -85,13 +47,13 @@ const Hero: React.FC = () => {
               <input
                 type="email"
                 placeholder="Ingresa tu email..."
-                className="flex-1 px-5 py-3 rounded-l-full bg-white text-[#172B4D] placeholder-[#7A869A] outline-none"
+                className="flex-1 px-4 sm:px-5 py-2 sm:py-3 rounded-l-full bg-white text-[#172B4D] placeholder-[#7A869A] outline-none text-sm sm:text-base"
               />
               <button
                 type="submit"
-                className="bg-[#FFAB00] hover:bg-[#FF9900] transition-colors px-6 rounded-r-full flex items-center justify-center"
+                className="bg-[#FFAB00] hover:bg-[#FF9900] transition-colors px-4 sm:px-6 rounded-r-full flex items-center justify-center"
               >
-                <svg width="22" height="22" fill="none" viewBox="0 0 24 24">
+                <svg width="18" height="18" className="sm:w-[22px] sm:h-[22px]" fill="none" viewBox="0 0 24 24">
                   <path
                     d="M5 12h14M13 6l6 6-6 6"
                     stroke="#fff"
@@ -103,34 +65,30 @@ const Hero: React.FC = () => {
               </button>
             </form>
           </div>
-
-          {/* Right Content */}
-          <div className="flex-1 flex justify-center items-center w-full mt-0 md:mt-0">
-            <div className="bg-[#F4F5F7] w-[340px] h-[420px] rounded-bl-3xl rounded-tr-3xl shadow-lg flex items-center justify-center">
-              <img
-                src="/src/assets/placeholder.svg"
-                alt="Ilustración principal"
-                className="w-48 h-48 object-contain opacity-60"
-              />
-            </div>
-          </div>
         </div>
       </div>
 
-      {/* Bottom Wave */}
-      <div className="absolute bottom-0 left-0 w-full">
+      {/* Bottom Wave: increased height and deeper curve for a more pronounced look */}
+      <div className="absolute bottom-0 left-0 w-full pointer-events-none">
         <svg
-          className="w-full h-24 md:h-32"
-          viewBox="0 0 1440 120"
+          className="w-full h-40 md:h-56"
+          viewBox="0 0 1440 180"
           fill="none"
           preserveAspectRatio="none"
+          aria-hidden="true"
         >
           <path
-            d="M0 120C240 40 480 40 720 80C960 120 1200 80 1440 40V120H0Z"
+            d="
+        M0 100
+        C 420 220, 1080 -100, 1440 100
+        V180
+        H0
+        Z"
             fill="white"
           />
         </svg>
       </div>
+
     </section>
   );
 };

@@ -1,1 +1,33 @@
 @import "tailwindcss";
+
+@layer utilities {
+  .landing-navbar {
+    position: fixed;
+    top: 1rem;
+    left: 50%;
+    transform: translateX(-50%);
+    width: calc(100% - 2rem);
+    max-width: 900px;
+    z-index: 50;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.5rem 1rem;
+    background-color: white;
+    border-radius: 0.75rem;
+    box-shadow: 0 25px 50px -12px rgb(0 0 0 / 0.25);
+    transition: transform 0.3s ease-in-out, opacity 0.3s ease-in-out;
+  }
+
+  @media (min-width: 640px) {
+    .landing-navbar {
+      top: 1.5rem;
+      padding: 0.75rem 1.5rem;
+    }
+  }
+
+  .navbar-hidden {
+    transform: translateX(-50%) translateY(-150%);
+    opacity: 0;
+  }
+}
