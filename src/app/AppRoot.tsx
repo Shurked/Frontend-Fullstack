@@ -22,6 +22,13 @@ import Calendar from '../features/dashboard/modules/calendar/Calendar'
 import Profile from '../features/dashboard/modules/profile/Profile'
 import TeamDetail from '../features/dashboard/modules/teams/components/equipos/TeamDetail'
 
+// Configuration Components - RUTAS INDEPENDIENTES
+import ConfigurationLayout from '../features/dashboard/modules/configuration/ConfigurationLayout'
+import ConfigurationProfile from '../features/dashboard/modules/configuration/profile'
+import Appearance from '../features/dashboard/modules/configuration/appearance'
+import Notifications from '../features/dashboard/modules/configuration/notifications'
+import Security from '../features/dashboard/modules/configuration/security'
+
 const AppRoot: React.FC = () => {
   return (
     <Router>
@@ -37,7 +44,7 @@ const AppRoot: React.FC = () => {
         <Route path="/auth/work-needs" element={<WorkNeeds />} />
         <Route path="/auth/work-tracking" element={<WorkTracking />} />
         
-        {/* Dashboard with nested routes */}
+        {/* Dashboard con rutas anidadas */}
         <Route path="/dashboard" element={<Dashboard />}>
           <Route index element={<ForYou />} />
           <Route path="for-you" element={<ForYou />} />
@@ -48,6 +55,15 @@ const AppRoot: React.FC = () => {
           <Route path="teams/equipo/:teamId" element={<TeamDetail />} />
           <Route path="calendar" element={<Calendar />} />
           <Route path="profile/:id" element={<Profile />} />
+        </Route>
+
+        {/* CONFIGURACIÓN - RUTAS INDEPENDIENTES */}
+        <Route path="/configuration" element={<ConfigurationLayout />}>
+          <Route index element={<ConfigurationProfile />} /> {/* Ruta por defecto */}
+          <Route path="profile" element={<ConfigurationProfile />} />
+          <Route path="appearance" element={<Appearance />} />
+          <Route path="notifications" element={<Notifications />} />
+          <Route path="security" element={<Security />} />
         </Route>
       </Routes>
     </Router>

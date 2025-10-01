@@ -31,6 +31,11 @@ const Navbar = () => {
     setShowProfileDropdown(false);
   };
 
+    const handleSettingsClick = () => {
+    navigate('/configuration/profile');
+    setShowProfileDropdown(false);
+  };
+
   const getNotificationColor = () => {
     switch (notificationStatus) {
       case 'success': return 'bg-[#36B37E]';
@@ -104,7 +109,9 @@ const Navbar = () => {
                       <User className="w-4 h-4" />
                       <span>Mi perfil</span>
                     </button>
-                    <button className="w-full flex items-center space-x-3 px-4 py-2 text-[#172B4D] hover:bg-[#F4F5F7] transition-colors">
+                    <button 
+                    onClick={handleSettingsClick}
+                    className="w-full flex items-center space-x-3 px-4 py-2 text-[#172B4D] hover:bg-[#F4F5F7] transition-colors">
                       <Settings className="w-4 h-4" />
                       <span>Configuraciones</span>
                     </button>
