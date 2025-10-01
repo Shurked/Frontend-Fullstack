@@ -34,7 +34,7 @@ const Templates: React.FC = () => {
             <h3 className="font-semibold text-xl mb-4 leading-snug text-[#172B4D]">Bug Tracking</h3>
               <div className="h-40 w-full rounded-xl mb-4 overflow-hidden bg-white">
                 <img
-                  src="https://raw.githubusercontent.com/shurked/assets/main/bug-tracking-template.png"
+                  src="https://b5digital.dk/wp-content/uploads/2022/06/bug-tracking-tools.jpg"
                   alt="Bug tracking template"
                   className="w-full h-full object-cover "
                   loading="lazy"
@@ -48,7 +48,7 @@ const Templates: React.FC = () => {
             <h3 className="font-semibold text-xl mb-4 leading-snug text-[#172B4D]">Planning</h3>
               <div className="h-40 w-full rounded-xl mb-4 overflow-hidden bg-white">
                 <img
-                  src="https://images.unsplash.com/photo-1465101046530-73398c7f28ca?auto=format&fit=crop&w=400&q=80"
+                  src="https://stafiz.com/wp-content/uploads/2025/05/planning-projet.png"
                   alt="Planning"
                   className="w-full h-full object-cover "
                   loading="lazy"
