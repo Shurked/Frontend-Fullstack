@@ -1,9 +1,17 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 
 const Login: React.FC = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const emailParam = params.get("email");
+    if (emailParam) {
+      setEmail(emailParam);
+    }
+  }, []);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -105,7 +113,7 @@ const Login: React.FC = () => {
             <p className="text-center text-[#7A869A] text-sm">
               No tienes cuenta?{" "}
               <Link
-                to="/register"
+                to="/auth/register"
                 className="text-[#4931A9] hover:underline font-medium"
               >
                 Regístrate gratis

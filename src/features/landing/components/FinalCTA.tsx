@@ -21,7 +21,7 @@ const FinalCTA: React.FC = () => (
       </h2>
 
       <Link
-        to="/register"
+        to="auth/register"
         className="px-10 py-3 rounded-full border-2 border-white text-white font-semibold text-lg hover:bg-white hover:text-[#4931A9] transition-colors"
       >
         Regístrate gratis

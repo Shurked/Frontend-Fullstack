@@ -5,11 +5,11 @@ const Hero: React.FC = () => {
     <section className="relative bg-[#4931A9] overflow-hidden min-h-screen">
       {/* Imagen de la derecha - Oculta en móviles (lg:block) */}
       <div className="hidden lg:block absolute top-0 right-0 w-1/4 h-[90vh] z-40">
-        <div className="bg-[#F4F5F7] w-full h-full rounded-bl-3xl shadow-lg flex items-center justify-center">
+        <div className="bg-[#F4F5F7] w-full h-full rounded-bl-3xl shadow-lg overflow-hidden">
           <img
-            src="/src/assets/placeholder.svg"
+            src="/trabajo-equipo.jpg"
             alt="Ilustración principal"
-            className="w-48 h-48 object-contain opacity-60"
+            className="w-full h-full object-cover"
           />
         </div>
       </div>
@@ -43,9 +43,21 @@ const Hero: React.FC = () => {
               Regístrate para disfrutar de "KUSKA" completamente
             </p>
 
-            <form className="flex w-full max-w-md mb-10">
+            <form
+              className="flex w-full max-w-md mb-10"
+              onSubmit={e => {
+                e.preventDefault();
+                const email = (e.currentTarget.elements.namedItem('email') as HTMLInputElement)?.value;
+                if (email && email.endsWith('@gmail.com')) {
+                  window.location.href = `auth/login?email=${encodeURIComponent(email)}`;
+                } else {
+                  window.location.href = 'auth/login';
+                }
+              }}
+            >
               <input
                 type="email"
+                name="email"
                 placeholder="Ingresa tu email..."
                 className="flex-1 px-4 sm:px-5 py-2 sm:py-3 rounded-l-full bg-white text-[#172B4D] placeholder-[#7A869A] outline-none text-sm sm:text-base"
               />

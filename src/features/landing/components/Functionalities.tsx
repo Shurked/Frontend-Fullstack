@@ -3,15 +3,35 @@ import React, { useState } from "react";
 interface Feature {
   id: number;
   title: string;
+  image: string;
+  alt: string;
 }
 
 const Functionalities: React.FC = () => {
   const [selected, setSelected] = useState<number | null>(null);
 
   const features: Feature[] = [
-    { id: 1, title: "Gestión de Tareas" },
-    { id: 2, title: "Tableros Ágiles" },
-    { id: 3, title: "Métricas" },
+    {
+      id: 1,
+      title: "Gestión de Tareas",
+      image:
+        "https://media.licdn.com/dms/image/v2/C5612AQHgiN2tGa-WMA/article-cover_image-shrink_720_1280/article-cover_image-shrink_720_1280/0/1641942863741?e=2147483647&v=beta&t=GkKhiqDc71UyUZNYdHfEffyV4AfUa9whH2ptPpGD7H4",
+      alt: "Gestión de tareas ilustración",
+    },
+    {
+      id: 2,
+      title: "Tableros Ágiles",
+      image:
+        "https://wac-cdn.atlassian.com/dam/jcr:fd5762d3-aa6d-4be9-a55b-8d1f1cf420fb/Screen_Unlimited%20Private%20Repos%20-%20Browser.png?cdnVersion=3002",
+      alt: "Tablero ágil ilustración",
+    },
+    {
+      id: 3,
+      title: "Métricas",
+      image:
+        "https://vilmanunez.com/wp-content/uploads/2014/03/analiticas-newsletter.png",
+      alt: "Métricas ilustración",
+    },
   ];
 
   return (
@@ -58,19 +78,20 @@ const Functionalities: React.FC = () => {
                 </h3>
 
                 <div
-                  className={`h-40 w-full rounded-xl mb-6 flex items-center justify-center ${
+                  className={`h-40 w-full rounded-xl mb-6 flex items-center justify-center overflow-hidden ${
                     isSelected
                       ? "bg-white/10 border border-white/20"
                       : "bg-white"
                   }`}
                 >
-                  <span
-                    className={`text-sm ${
-                      isSelected ? "text-white/70" : "text-[#7A869A]"
+                  <img
+                    src={feature.image}
+                    alt={feature.alt}
+                    className={`h-full w-full object-cover transition-opacity duration-300 ${
+                      isSelected ? "opacity-100" : "opacity-90"
                     }`}
-                  >
-                    Feature Demo
-                  </span>
+                    loading="lazy"
+                  />
                 </div>
 
                 {isSelected ? (

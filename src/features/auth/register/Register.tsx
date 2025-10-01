@@ -34,12 +34,12 @@ const Register: React.FC = () => {
       </div>
 
       {/* Right side - Register form */}
-  <div className="w-full lg:w-1/2 flex items-center justify-center px-4 py-4 bg-white relative min-h-screen">
+      <div className="w-full lg:w-1/2 flex items-center justify-center px-4 py-4 bg-white relative min-h-screen">
         {/* Small decorative circles for mobile */}
         <div className="absolute top-0 right-0 w-32 h-32 bg-[#4931A9] rounded-full translate-x-1/2 -translate-y-1/2 lg:hidden"></div>
         <div className="absolute bottom-0 left-0 w-40 h-40 bg-[#4931A9] rounded-full -translate-x-1/2 translate-y-1/2 lg:hidden"></div>
 
-  <div className="w-full max-w-sm relative z-10 flex flex-col justify-center h-full">
+        <div className="w-full max-w-sm relative z-10 flex flex-col justify-center h-full">
           {/* Logo + KUSKA SVG */}
           <div className="flex flex-col items-center mb-4">
             <img
@@ -185,7 +185,7 @@ const Register: React.FC = () => {
             <p className="text-center text-[#7A869A] text-sm pt-2">
               Ya tienes cuenta?{" "}
               <Link
-                to="/login"
+                to="/auth/login"
                 className="text-[#4931A9] hover:underline font-medium"
               >
                 Inicia sesión
