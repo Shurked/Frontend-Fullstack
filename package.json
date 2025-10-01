@@ -8,7 +8,7 @@
     "build": "vite build",
     "lint": "eslint .",
     "type-check": "tsc --noEmit",
-  "preview": "vite preview --port $PORT"
+    "preview": "vite preview --port $PORT --host 0.0.0.0"
   },
   "dependencies": {
     "@tailwindcss/vite": "^4.1.13",
