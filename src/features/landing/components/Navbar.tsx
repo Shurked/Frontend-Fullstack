@@ -9,7 +9,7 @@ const Navbar: React.FC<NavbarProps> = ({ isHidden = false }) => {
     <nav className={`landing-navbar ${isHidden ? 'navbar-hidden' : ''}`}>
       <div className="flex items-center gap-2 sm:gap-3">
         <img
-          src="/src/assets/placeholder.svg"
+          src="/kuska-logov2.png"
           alt="Logo"
           className="w-8 h-8 sm:w-10 sm:h-10 rounded-md"
         />
