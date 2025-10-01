@@ -18,6 +18,8 @@ import Projects from '../features/dashboard/modules/projects/Projects'
 import Templates from '../features/dashboard/modules/templates/Templates'
 import Teams from '../features/dashboard/modules/teams/Teams'
 import Calendar from '../features/dashboard/modules/calendar/Calendar'
+import Profile from '../features/dashboard/modules/profile/Profile'
+import TeamDetail from '../features/dashboard/modules/teams/components/equipos/TeamDetail'
 
 const AppRoot: React.FC = () => {
   return (
@@ -41,7 +43,9 @@ const AppRoot: React.FC = () => {
           <Route path="projects" element={<Projects />} />
           <Route path="templates" element={<Templates />} />
           <Route path="teams" element={<Teams />} />
+          <Route path="teams/equipo/:teamId" element={<TeamDetail />} />
           <Route path="calendar" element={<Calendar />} />
+          <Route path="profile/:id" element={<Profile />} />
         </Route>
       </Routes>
     </Router>

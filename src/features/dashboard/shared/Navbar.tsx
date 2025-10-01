@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { 
   Search, 
   Bell, 
@@ -14,13 +15,20 @@ import {
 } from 'lucide-react';
 // Componente Navbar independiente
 const Navbar = () => {
+  const navigate = useNavigate();
   const [showProfileDropdown, setShowProfileDropdown] = useState(false);
   const [notificationStatus, setNotificationStatus] = useState('success');
 
   const user = {
+    id: '1', // ID del usuario actual
     name: 'Jorge C. Bardales',
     avatar: null,
     initials: 'JC'
+  };
+
+  const handleProfileClick = () => {
+    navigate(`/dashboard/profile/${user.id}`);
+    setShowProfileDropdown(false);
   };
 
   const getNotificationColor = () => {
@@ -89,7 +97,10 @@ const Navbar = () => {
               {showProfileDropdown && (
                 <div className="absolute right-0 mt-2 w-48 bg-white border border-gray-200 rounded-lg shadow-lg z-50">
                   <div className="py-2">
-                    <button className="w-full flex items-center space-x-3 px-4 py-2 text-[#172B4D] hover:bg-[#F4F5F7] transition-colors">
+                    <button 
+                      onClick={handleProfileClick}
+                      className="w-full flex items-center space-x-3 px-4 py-2 text-[#172B4D] hover:bg-[#F4F5F7] transition-colors"
+                    >
                       <User className="w-4 h-4" />
                       <span>Mi perfil</span>
                     </button>
