@@ -24,10 +24,10 @@ import TeamDetail from '../features/dashboard/modules/teams/components/equipos/T
 
 // Configuration Components - RUTAS INDEPENDIENTES
 import ConfigurationLayout from '../features/dashboard/modules/configuration/ConfigurationLayout'
-import ConfigurationProfile from '../features/dashboard/modules/configuration/profile'
-import Appearance from '../features/dashboard/modules/configuration/appearance'
-import Notifications from '../features/dashboard/modules/configuration/notifications'
-import Security from '../features/dashboard/modules/configuration/security'
+import ConfigurationProfile from '../features/dashboard/modules/configuration/Profile'
+import Appearance from '../features/dashboard/modules/configuration/Appearance'
+import Notifications from '../features/dashboard/modules/configuration/Notifications'
+import Security from '../features/dashboard/modules/configuration/Security'
 
 const AppRoot: React.FC = () => {
   return (
