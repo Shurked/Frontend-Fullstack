@@ -131,12 +131,12 @@ const ForYou: React.FC = () => {
         <div className="px-6 py-6">
           {/* Comentado por ahora - puedes descomentar cuando quieras usarlos */}
           
-          {/* <UserHeader 
+          <UserHeader 
             user={mockData.user}
             currentTime={currentTime}
             unreadNotifications={unreadNotifications}
           />
-          <StatsGrid stats={mockData.stats} /> */}
+          <StatsGrid stats={mockData.stats} />
          
           
           <RecentProjects 
@@ -171,8 +171,8 @@ const ForYou: React.FC = () => {
         notifications={notifications}
         onTaskToggle={handleTaskToggle}
         onMarkRead={handleMarkRead}
-      /> */}
-     
+      />
+      */}
     </div>
   );
 };
