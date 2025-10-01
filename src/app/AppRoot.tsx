@@ -15,6 +15,7 @@ import {
 import Dashboard from '../features/dashboard/Dashboard'
 import ForYou from '../features/dashboard/modules/foryou/ForYou'
 import Projects from '../features/dashboard/modules/projects/Projects'
+import { ProjectSummary } from '../features/dashboard/modules/projects/sumary'
 import Templates from '../features/dashboard/modules/templates/Templates'
 import Teams from '../features/dashboard/modules/teams/Teams'
 import Calendar from '../features/dashboard/modules/calendar/Calendar'
@@ -41,6 +42,7 @@ const AppRoot: React.FC = () => {
           <Route index element={<ForYou />} />
           <Route path="for-you" element={<ForYou />} />
           <Route path="projects" element={<Projects />} />
+          <Route path="projects/:projectId" element={<ProjectSummary />} />
           <Route path="templates" element={<Templates />} />
           <Route path="teams" element={<Teams />} />
           <Route path="teams/equipo/:teamId" element={<TeamDetail />} />
