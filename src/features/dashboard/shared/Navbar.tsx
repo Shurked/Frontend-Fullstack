@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { 
-  Search, 
-  Bell, 
-  User, 
-  Settings, 
+import { useAuth } from '../../auth/context/AuthContext';
+import {
+  Search,
+  Bell,
+  User,
+  Settings,
   LogOut,
   Home,
   FolderOpen,
@@ -16,14 +17,21 @@ import {
 // Componente Navbar independiente
 const Navbar = () => {
   const navigate = useNavigate();
+  const { user: authUser, logout } = useAuth();
   const [showProfileDropdown, setShowProfileDropdown] = useState(false);
   const [notificationStatus, setNotificationStatus] = useState('success');
 
-  const user = {
-    id: '1', // ID del usuario actual
-    name: 'Jorge C. Bardales',
+  // Usar datos del usuario autenticado
+  const user = authUser ? {
+    id: authUser.id,
+    name: authUser.completeName,
     avatar: null,
-    initials: 'JC'
+    initials: authUser.completeName.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2)
+  } : {
+    id: '1',
+    name: 'Usuario',
+    avatar: null,
+    initials: 'U'
   };
 
   const handleProfileClick = () => {
@@ -31,9 +39,18 @@ const Navbar = () => {
     setShowProfileDropdown(false);
   };
 
-    const handleSettingsClick = () => {
+  const handleSettingsClick = () => {
     navigate('/configuration/profile');
     setShowProfileDropdown(false);
+  };
+
+  const handleLogout = async () => {
+    try {
+      await logout();
+      navigate('/auth/login');
+    } catch (error) {
+      console.error('Logout error:', error);
+    }
   };
 
   const getNotificationColor = () => {
@@ -116,7 +133,10 @@ const Navbar = () => {
                       <span>Configuraciones</span>
                     </button>
                     <hr className="my-2 border-gray-200" />
-                    <button className="w-full flex items-center space-x-3 px-4 py-2 text-[#172B4D] hover:bg-[#F4F5F7] transition-colors">
+                    <button
+                      onClick={handleLogout}
+                      className="w-full flex items-center space-x-3 px-4 py-2 text-[#172B4D] hover:bg-[#F4F5F7] transition-colors"
+                    >
                       <LogOut className="w-4 h-4" />
                       <span>Salir</span>
                     </button>

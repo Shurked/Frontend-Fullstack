@@ -1,15 +1,27 @@
-import React, { useState } from "react";
-import { Link } from "react-router-dom";
+import React, { useState, useEffect } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
 
 const Register: React.FC = () => {
   const [formData, setFormData] = useState({
     fullName: "",
     email: "",
-    birthdate: "",
     phone: "",
     password: "",
     confirmPassword: "",
   });
+  const [error, setError] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+
+  const navigate = useNavigate();
+  const { register, isAuthenticated } = useAuth();
+
+  // Redirigir si ya está autenticado
+  useEffect(() => {
+    if (isAuthenticated) {
+      navigate("/dashboard");
+    }
+  }, [isAuthenticated, navigate]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({
@@ -18,10 +30,54 @@ const Register: React.FC = () => {
     });
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const validatePassword = (password: string): boolean => {
+    // Mínimo 8 caracteres, 1 mayúscula, 1 minúscula, 1 número
+    const minLength = password.length >= 8;
+    const hasUpperCase = /[A-Z]/.test(password);
+    const hasLowerCase = /[a-z]/.test(password);
+    const hasNumber = /\d/.test(password);
+
+    return minLength && hasUpperCase && hasLowerCase && hasNumber;
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Registration logic will be implemented here
-    console.log("Register attempt:", formData);
+    setError("");
+
+    // Validar que las contraseñas coincidan
+    if (formData.password !== formData.confirmPassword) {
+      setError("Las contraseñas no coinciden");
+      return;
+    }
+
+    // Validar requisitos de contraseña
+    if (!validatePassword(formData.password)) {
+      setError(
+        "La contraseña debe tener mínimo 8 caracteres, 1 mayúscula, 1 minúscula y 1 número"
+      );
+      return;
+    }
+
+    setIsLoading(true);
+
+    try {
+      await register({
+        email: formData.email,
+        password: formData.password,
+        completeName: formData.fullName,
+        phone: formData.phone || undefined, // Enviar solo si tiene valor
+      });
+      // Redirigir al onboarding
+      navigate("/auth/work-type");
+    } catch (err: any) {
+      console.error("Register error:", err);
+      setError(
+        err.response?.data?.message ||
+        "Error al registrar. Intenta nuevamente."
+      );
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -71,6 +127,13 @@ const Register: React.FC = () => {
 
           {/* Form */}
           <form onSubmit={handleSubmit} className="space-y-4">
+            {/* Error message */}
+            {error && (
+              <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
+                {error}
+              </div>
+            )}
+
             {/* Full Name */}
             <div>
               <label htmlFor="fullName" className="block text-[#172B4D] font-medium mb-2">
@@ -85,6 +148,7 @@ const Register: React.FC = () => {
                 placeholder="Ingresa tu nombre..."
                 className="w-full px-4 py-3 border border-[#DFE1E6] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#4931A9] focus:border-transparent transition-all"
                 required
+                disabled={isLoading}
               />
             </div>
 
@@ -102,30 +166,14 @@ const Register: React.FC = () => {
                 placeholder="Ingresa tu email..."
                 className="w-full px-4 py-3 border border-[#DFE1E6] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#4931A9] focus:border-transparent transition-all"
                 required
+                disabled={isLoading}
               />
             </div>
 
-            {/* Birthdate */}
-            <div>
-              <label htmlFor="birthdate" className="block text-[#172B4D] font-medium mb-2">
-                Nacimiento
-              </label>
-              <input
-                id="birthdate"
-                name="birthdate"
-                type="text"
-                value={formData.birthdate}
-                onChange={handleChange}
-                placeholder="MM / DD / YY"
-                className="w-full px-4 py-3 border border-[#DFE1E6] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#4931A9] focus:border-transparent transition-all"
-                required
-              />
-            </div>
-
-            {/* Phone */}
+            {/* Phone - opcional */}
             <div>
               <label htmlFor="phone" className="block text-[#172B4D] font-medium mb-2">
-                Celular
+                Celular (opcional)
               </label>
               <input
                 id="phone"
@@ -135,7 +183,7 @@ const Register: React.FC = () => {
                 onChange={handleChange}
                 placeholder="+51 000 / 000 / 000"
                 className="w-full px-4 py-3 border border-[#DFE1E6] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#4931A9] focus:border-transparent transition-all"
-                required
+                disabled={isLoading}
               />
             </div>
 
@@ -153,7 +201,11 @@ const Register: React.FC = () => {
                 placeholder="Ingresar..."
                 className="w-full px-4 py-3 border border-[#DFE1E6] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#4931A9] focus:border-transparent transition-all"
                 required
+                disabled={isLoading}
               />
+              <p className="text-xs text-gray-500 mt-1">
+                Mínimo 8 caracteres, 1 mayúscula, 1 minúscula y 1 número
+              </p>
             </div>
 
             {/* Confirm Password */}
@@ -170,15 +222,17 @@ const Register: React.FC = () => {
                 placeholder="Ingresar..."
                 className="w-full px-4 py-3 border border-[#DFE1E6] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#4931A9] focus:border-transparent transition-all"
                 required
+                disabled={isLoading}
               />
             </div>
 
             {/* Submit button */}
             <button
               type="submit"
-              className="w-full bg-[#4931A9] hover:bg-[#3d2889] text-white font-semibold py-3 rounded-lg transition-colors mt-6"
+              disabled={isLoading}
+              className="w-full bg-[#4931A9] hover:bg-[#3d2889] text-white font-semibold py-3 rounded-lg transition-colors mt-6 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              Registrarse
+              {isLoading ? "Registrando..." : "Registrarse"}
             </button>
 
             {/* Login link */}

@@ -1,5 +1,7 @@
 import React from 'react'
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
+import { AuthProvider } from '../features/auth/context/AuthContext'
+import ProtectedRoute from '../components/ProtectedRoute'
 import LandingPage from '../features/landing/LandingPage'
 
 // Auth Components
@@ -31,21 +33,22 @@ import Security from '../features/dashboard/modules/configuration/Security'
 
 const AppRoot: React.FC = () => {
   return (
-    <Router>
-      <Routes>
+    <AuthProvider>
+      <Router>
+        <Routes>
         {/* Landing Page */}
         <Route path="/" element={<LandingPage />} />
         
         {/* Authentication Flow */}
         <Route path="/auth/login" element={<Login />} />
         <Route path="/auth/register" element={<Register />} />
-        <Route path="/auth/work-type" element={<WorkType />} />
-        <Route path="/auth/project-name" element={<ProjectName />} />
-        <Route path="/auth/work-needs" element={<WorkNeeds />} />
-        <Route path="/auth/work-tracking" element={<WorkTracking />} />
-        
-        {/* Dashboard con rutas anidadas */}
-        <Route path="/dashboard" element={<Dashboard />}>
+        <Route path="/auth/work-type" element={<ProtectedRoute><WorkType /></ProtectedRoute>} />
+        <Route path="/auth/project-name" element={<ProtectedRoute><ProjectName /></ProtectedRoute>} />
+        <Route path="/auth/work-needs" element={<ProtectedRoute><WorkNeeds /></ProtectedRoute>} />
+        <Route path="/auth/work-tracking" element={<ProtectedRoute><WorkTracking /></ProtectedRoute>} />
+
+        {/* Dashboard con rutas anidadas - PROTEGIDO */}
+        <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>}>
           <Route index element={<ForYou />} />
           <Route path="for-you" element={<ForYou />} />
           <Route path="projects" element={<Projects />} />
@@ -57,8 +60,8 @@ const AppRoot: React.FC = () => {
           <Route path="profile/:id" element={<Profile />} />
         </Route>
 
-        {/* CONFIGURACIÓN - RUTAS INDEPENDIENTES */}
-        <Route path="/configuration" element={<ConfigurationLayout />}>
+        {/* CONFIGURACIÓN - RUTAS INDEPENDIENTES - PROTEGIDO */}
+        <Route path="/configuration" element={<ProtectedRoute><ConfigurationLayout /></ProtectedRoute>}>
           <Route index element={<ConfigurationProfile />} /> {/* Ruta por defecto */}
           <Route path="profile" element={<ConfigurationProfile />} />
           <Route path="appearance" element={<Appearance />} />
@@ -66,7 +69,8 @@ const AppRoot: React.FC = () => {
           <Route path="security" element={<Security />} />
         </Route>
       </Routes>
-    </Router>
+      </Router>
+    </AuthProvider>
   )
 }
 
