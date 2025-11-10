@@ -1,107 +1,113 @@
-# React Frontend - FullStack Project
+# KUSKA - Frontend React con Vite & TypeScript
 
-Este es un proyecto de React configurado con Vite, Tailwind CSS, React Router DOM y un sistema de autenticación completo.
-
-## Características
-
-- ⚛️ **React 18** con Vite para desarrollo rápido
-- 🎨 **Tailwind CSS** para styling
-- 🧭 **React Router DOM** para navegación
-- 🔐 **Sistema de autenticación** con Context API
-- 🛡️ **Rutas protegidas**
-- 📱 **Diseño responsive**
+Sistema de gestión de proyectos y colaboración en equipo construido con React, TypeScript, Vite y Tailwind CSS, con autenticación completa integrada con backend REST API.
 
 ## Estructura del Proyecto
 
 ```
 src/
+├── app/
+│   └── AppRoot.tsx              # Configuración de rutas principal
 ├── components/
-│   └── ProtectedRoute.jsx    # Componente para rutas protegidas
-├── context/
-│   └── AuthContext.jsx       # Context para autenticación
-├── pages/
-│   ├── LandingPage.jsx       # Página de inicio
-│   ├── Login.jsx             # Página de login
-│   ├── Register.jsx          # Página de registro
-│   └── Dashboard.jsx         # Dashboard protegido
-├── App.jsx                   # Componente principal
-├── main.jsx                  # Punto de entrada
-└── index.css                 # Estilos Tailwind
+│   └── ProtectedRoute.tsx       # HOC para rutas protegidas
+├── features/
+│   ├── auth/                    # Feature de Autenticación
+│   │   ├── context/
+│   │   │   ├── AuthContext.tsx  # Context API para auth
+│   │   │   └── index.ts
+│   │   ├── services/
+│   │   │   ├── axios.config.ts  # Configuración de Axios + interceptores
+│   │   │   ├── auth.service.ts  # Servicio de autenticación
+│   │   │   └── index.ts
+│   │   ├── types/
+│   │   │   ├── auth.types.ts    # Interfaces TypeScript
+│   │   │   └── index.ts
+│   │   ├── login/
+│   │   │   └── Login.tsx        # Página de login
+│   │   ├── register/
+│   │   │   └── Register.tsx     # Página de registro
+│   │   └── index.ts
+│   ├── landing/
+│   │   └── LandingPage.tsx      # Landing page
+│   └── dashboard/               # Feature del Dashboard
+│       ├── modules/
+│       │   ├── foryou/          # Módulo "Para Ti"
+│       │   ├── projects/        # Módulo de Proyectos
+│       │   ├── templates/       # Módulo de Plantillas
+│       │   ├── teams/           # Módulo de Equipos
+│       │   ├── calendar/        # Módulo de Calendario
+│       │   ├── profile/         # Módulo de Perfil
+│       │   └── configuration/   # Módulo de Configuración
+│       ├── shared/
+│       │   ├── Navbar.tsx       # Barra de navegación
+│       │   ├── Sidebar.tsx      # Menú lateral
+│       │   └── Sidebarconfig.tsx
+│       └── Dashboard.tsx        # Layout del dashboard
+├── App.tsx
+├── main.tsx
+└── index.css
 ```
 
-## Rutas Disponibles
+## 🌐 Rutas Disponibles
 
-- `/` - Landing Page (página principal)
-- `/login` - Página de inicio de sesión
-- `/register` - Página de registro
-- `/dashboard` - Dashboard (ruta protegida)
+### Rutas Públicas
+- `/` - Landing Page
+- `/auth/login` - Inicio de sesión
+- `/auth/register` - Registro de usuario
 
-## Flujo de Navegación
+### Rutas Protegidas (Requieren autenticación)
+- `/auth/work-type` - Onboarding: Tipo de trabajo
+- `/auth/project-name` - Onboarding: Nombre del proyecto
+- `/auth/work-needs` - Onboarding: Necesidades
+- `/auth/work-tracking` - Onboarding: Seguimiento
 
-1. **Landing Page** (`/`) - Punto de entrada con enlaces a login y register
-2. **Login** (`/login`) - Formulario de inicio de sesión con enlace a register
-3. **Register** (`/register`) - Formulario de registro con enlace a login
-4. **Dashboard** (`/dashboard`) - Área protegida que requiere autenticación
+### Dashboard (Protegido)
+- `/dashboard` - Dashboard principal (For You)
+- `/dashboard/for-you` - Sección Para Ti
+- `/dashboard/projects` - Lista de proyectos
+- `/dashboard/projects/:projectId` - Detalle de proyecto
+- `/dashboard/templates` - Plantillas
+- `/dashboard/teams` - Equipos
+- `/dashboard/teams/equipo/:teamId` - Detalle de equipo
+- `/dashboard/calendar` - Calendario
+- `/dashboard/profile/:id` - Perfil de usuario
 
-## Sistema de Autenticación
+### Configuración (Protegido)
+- `/configuration` - Configuración general
+- `/configuration/profile` - Perfil de usuario
+- `/configuration/appearance` - Apariencia
+- `/configuration/notifications` - Notificaciones
+- `/configuration/security` - Seguridad
 
-- Utiliza Context API para manejar el estado de autenticación
-- Persistencia de sesión con localStorage
-- Rutas protegidas que redirigen a login si no hay usuario autenticado
-- Función de logout que limpia el estado y redirige al inicio
+### Endpoints del Backend
 
-## Instalación y Uso
+#### Públicos (no requieren autenticación)
+```typescript
+POST /api/auth/register
+Body: { email, password, completeName, phone? }
+Response: { accessToken, refreshToken, user }
 
-1. **Instalar dependencias:**
-   ```bash
-   npm install
-   ```
+POST /api/auth/login
+Body: { email, password }
+Response: { accessToken, refreshToken, user }
 
-2. **Iniciar el servidor de desarrollo:**
-   ```bash
-   npm run dev
-   ```
+POST /api/auth/refresh
+Body: { refreshToken }
+Response: { accessToken }
+```
 
-3. **Compilar para producción:**
-   ```bash
-   npm run build
-   ```
+#### Protegidos (requieren header: `Authorization: Bearer <token>`)
+```typescript
+GET  /api/auth/me
+POST /api/auth/logout
+GET  /api/projects
+POST /api/projects
+GET  /api/tasks
+POST /api/tasks
+GET  /api/teams
+POST /api/teams
+```
 
-4. **Preview de la compilación:**
-   ```bash
-   npm run preview
-   ```
-
-## Tecnologías Utilizadas
-
-- **Vite** - Build tool y servidor de desarrollo
-- **React** - Biblioteca de JavaScript para UI
-- **React Router DOM** - Enrutamiento del lado del cliente
-- **Tailwind CSS** - Framework de CSS utility-first
-- **PostCSS** - Procesador de CSS
-
-## Notas de Desarrollo
-
-- El proyecto está configurado solo con JavaScript (no TypeScript)
-- La autenticación es simulada (no hay backend real)
-- Los estilos utilizan las clases de Tailwind CSS
-- Las rutas están protegidas mediante el componente `ProtectedRoute`
-
-## Próximos Pasos
-
-- Integrar con una API backend real
-- Implementar validación de formularios más robusta
-- Agregar más páginas al dashboard
-- Implementar refresh tokens
-- Agregar tests unitarios+ Vite
-
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
-
-Currently, two official plugins are available:
-
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
-
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+### Validaciones
+- **Password**: Mínimo 8 caracteres, 1 mayúscula, 1 minúscula, 1 número
+- **Phone**: Opcional, formato: `+countrycode+number` (ej: `+51987654321`)

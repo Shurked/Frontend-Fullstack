@@ -1,9 +1,15 @@
 import React, { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
 
 const Login: React.FC = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+
+  const navigate = useNavigate();
+  const { login, isAuthenticated } = useAuth();
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -13,10 +19,30 @@ const Login: React.FC = () => {
     }
   }, []);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  // Redirigir si ya está autenticado
+  useEffect(() => {
+    if (isAuthenticated) {
+      navigate("/dashboard");
+    }
+  }, [isAuthenticated, navigate]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Login logic will be implemented here
-    console.log("Login attempt:", { email, password });
+    setError("");
+    setIsLoading(true);
+
+    try {
+      await login({ email, password });
+      navigate("/dashboard");
+    } catch (err: any) {
+      console.error("Login error:", err);
+      setError(
+        err.response?.data?.message ||
+        "Error al iniciar sesión. Verifica tus credenciales."
+      );
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -69,6 +95,13 @@ const Login: React.FC = () => {
 
           {/* Form */}
           <form onSubmit={handleSubmit} className="space-y-6">
+            {/* Error message */}
+            {error && (
+              <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
+                {error}
+              </div>
+            )}
+
             {/* Email field */}
             <div>
               <label htmlFor="email" className="block text-[#172B4D] font-medium mb-2">
@@ -82,6 +115,7 @@ const Login: React.FC = () => {
                 placeholder="Ingresa tu email..."
                 className="w-full px-4 py-3 border border-[#DFE1E6] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#4931A9] focus:border-transparent transition-all"
                 required
+                disabled={isLoading}
               />
             </div>
 
@@ -98,15 +132,17 @@ const Login: React.FC = () => {
                 placeholder="Ingresa tu contraseña..."
                 className="w-full px-4 py-3 border border-[#DFE1E6] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#4931A9] focus:border-transparent transition-all"
                 required
+                disabled={isLoading}
               />
             </div>
 
             {/* Submit button */}
             <button
               type="submit"
-              className="w-full bg-[#4931A9] hover:bg-[#3d2889] text-white font-semibold py-3 rounded-lg transition-colors"
+              disabled={isLoading}
+              className="w-full bg-[#4931A9] hover:bg-[#3d2889] text-white font-semibold py-3 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              Ingresar
+              {isLoading ? "Iniciando sesión..." : "Ingresar"}
             </button>
 
             {/* Register link */}
