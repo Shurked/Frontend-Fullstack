@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { ProjectDetails, ProjectTab } from './types';
+import ConfigTab from './ConfigTab';
 import SummaryTab from './SummaryTab';
 import { BoardView } from '../panel';
 
@@ -105,14 +106,29 @@ const ProjectSummary: React.FC = () => {
               <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#4931A9]"></div>
             )}
           </button>
+          <button
+            onClick={() => setActiveTab('config')}
+            className={`px-4 py-2 font-medium transition-colors relative ${
+              activeTab === 'config'
+                ? 'text-[#4931A9]'
+                : 'text-[#7A869A] hover:text-[#172B4D]'
+            }`}
+          >
+            Configuración
+            {activeTab === 'config' && (
+              <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#4931A9]"></div>
+            )}
+          </button>
         </div>
       </div>
 
       {/* Contenido del tab activo */}
       {activeTab === 'summary' ? (
         <SummaryTab project={project} />
-      ) : (
+      ) : activeTab === 'board' ? (
         <BoardView />
+      ) : (
+        <ConfigTab />
       )}
     </div>
   );

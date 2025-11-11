@@ -32,4 +32,5 @@ export interface Activity {
   type: 'status_change' | 'creation' | 'update' | 'comment';
 }
 
-export type ProjectTab = 'summary' | 'board';
+// Include 'config' since ProjectSummary renders a Configuración tab
+export type ProjectTab = 'summary' | 'board' | 'config';

@@ -1,71 +1,42 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Project, ProjectFilter } from './types';
 import ProjectHeader from './ProjectHeader';
 import ProjectCard from './ProjectCard';
 import EmptyState from './EmptyState';
+import CreateProjectModal from './CreateProjectModal';
+import { listProjects } from '../services/projects.service';
+import { mapProjectResponseToUI } from '../mappers';
 
-// Datos de ejemplo (esto vendría de una API en producción)
-const mockProjects: Project[] = [
-  {
-    id: '1',
-    name: 'Plataforma de Desarrollo',
-    type: 'Scrum',
-    lead: {
-      name: 'Jorge C. Bardales',
-      avatar: 'https://ui-avatars.com/api/?name=Jorge+Bardales&background=4931A9&color=fff',
-    },
-    isFavorite: true,
-    lastUpdated: new Date(Date.now() - 1000 * 60 * 60 * 24 * 2), // 2 días atrás
-    description: 'Desarrollo de la plataforma principal de gestión de proyectos',
-    membersCount: 8,
-  },
-  {
-    id: '2',
-    name: 'Diseño UI/UX',
-    type: 'Kanban',
-    lead: {
-      name: 'María González',
-      avatar: 'https://ui-avatars.com/api/?name=Maria+Gonzalez&background=5940BA&color=fff',
-    },
-    isFavorite: false,
-    lastUpdated: new Date(Date.now() - 1000 * 60 * 60 * 24), // 1 día atrás
-    description: 'Rediseño completo de la interfaz de usuario',
-    membersCount: 5,
-  },
-  {
-    id: '3',
-    name: 'Backend API',
-    type: 'Scrum',
-    lead: {
-      name: 'Carlos Ruiz',
-      avatar: 'https://ui-avatars.com/api/?name=Carlos+Ruiz&background=FFAB00&color=172B4D',
-    },
-    isFavorite: true,
-    lastUpdated: new Date(Date.now() - 1000 * 60 * 60 * 5), // 5 horas atrás
-    description: 'Desarrollo y mantenimiento de servicios backend',
-    membersCount: 12,
-  },
-  {
-    id: '4',
-    name: 'Mobile App',
-    type: 'Kanban',
-    lead: {
-      name: 'Ana Pérez',
-      avatar: 'https://ui-avatars.com/api/?name=Ana+Perez&background=00C853&color=fff',
-    },
-    isFavorite: false,
-    lastUpdated: new Date(Date.now() - 1000 * 60 * 60 * 24 * 7), // 1 semana atrás
-    description: 'Aplicación móvil multiplataforma con React Native',
-    membersCount: 6,
-  },
-];
+// Keep an empty array initially; we'll fetch from API
+const mockProjects: Project[] = []
 
 const ProjectList: React.FC = () => {
   const navigate = useNavigate();
   const [projects, setProjects] = useState<Project[]>(mockProjects);
   const [searchQuery, setSearchQuery] = useState('');
   const [activeFilter, setActiveFilter] = useState<ProjectFilter>('all');
+  const [showCreate, setShowCreate] = useState(false);
+
+  useEffect(() => {
+    let mounted = true
+    ;(async () => {
+      try {
+        const res = await listProjects()
+        // res could be ProjectResponse[] or wrapped; map if array
+        if (Array.isArray(res)) {
+          const ui = res.map(mapProjectResponseToUI)
+          if (mounted) setProjects(ui)
+        }
+      } catch (err) {
+        // keep mocks (empty) on error
+        console.warn('Could not load projects', err)
+      }
+    })()
+    return () => {
+      mounted = false
+    }
+  }, [])
 
   // Filtrar y buscar proyectos
   const filteredProjects = useMemo(() => {
@@ -112,9 +83,22 @@ const ProjectList: React.FC = () => {
   };
 
   const handleCreateProject = () => {
-    console.log('Crear nuevo proyecto');
-    // Aquí se implementaría la lógica para crear un proyecto
-  };
+    setShowCreate(true)
+  }
+
+  function handleCloseCreate() {
+    setShowCreate(false)
+  }
+
+  function handleCreated(res: any) {
+    try {
+      const ui = mapProjectResponseToUI(res)
+      setProjects((prev) => [ui, ...prev])
+    } catch (e) {
+      // ignore mapping errors
+      setProjects((prev) => prev)
+    }
+  }
 
   return (
     <div className="p-4 md:p-6">
@@ -126,6 +110,10 @@ const ProjectList: React.FC = () => {
         onCreateProject={handleCreateProject}
         projectsCount={filteredProjects.length}
       />
+
+      {showCreate && (
+        <CreateProjectModal onClose={handleCloseCreate} onCreated={handleCreated} />
+      )}
 
       {filteredProjects.length === 0 ? (
         <EmptyState onCreateProject={handleCreateProject} />
