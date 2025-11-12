@@ -1,8 +1,21 @@
 import React from 'react'
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { AuthProvider } from '../features/auth/context/AuthContext'
 import ProtectedRoute from '../components/ProtectedRoute'
 import LandingPage from '../features/landing/LandingPage'
+
+// Configurar QueryClient con opciones de caché
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 5 * 60 * 1000, // 5 minutos - datos considerados frescos
+      gcTime: 10 * 60 * 1000, // 10 minutos - garbage collection
+      refetchOnWindowFocus: false, // No refetch al cambiar de ventana
+      retry: 1,
+    },
+  },
+})
 
 // Auth Components
 import { LoginPage as Login, RegisterPage as Register } from '../features/auth'
@@ -33,9 +46,10 @@ import Security from '../features/dashboard/modules/configuration/Security'
 
 const AppRoot: React.FC = () => {
   return (
-    <AuthProvider>
-      <Router>
-        <Routes>
+    <QueryClientProvider client={queryClient}>
+      <AuthProvider>
+        <Router>
+          <Routes>
         {/* Landing Page */}
         <Route path="/" element={<LandingPage />} />
         
@@ -71,6 +85,7 @@ const AppRoot: React.FC = () => {
       </Routes>
       </Router>
     </AuthProvider>
+    </QueryClientProvider>
   )
 }
 

@@ -24,9 +24,11 @@ const Navbar = () => {
   // Usar datos del usuario autenticado
   const user = authUser ? {
     id: authUser.id,
-    name: authUser.completeName,
+    name: authUser.completeName || authUser.email || 'Usuario',
     avatar: null,
-    initials: authUser.completeName.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2)
+    initials: authUser.completeName 
+      ? authUser.completeName.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2)
+      : (authUser.email ? authUser.email[0].toUpperCase() : 'U')
   } : {
     id: '1',
     name: 'Usuario',

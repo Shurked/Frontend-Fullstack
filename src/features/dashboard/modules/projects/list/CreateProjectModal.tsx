@@ -1,7 +1,7 @@
 import React, { useState } from 'react'
 import type { CreateProjectDto } from '../types.api'
 import { TEMPLATE_TYPES } from '../constants'
-import { createProject } from '../services/projects.service'
+import { useCreateProject } from '../services/projects.service'
 import { parseApiErrors } from '../errorUtils'
 
 interface Props {
@@ -17,7 +17,9 @@ const CreateProjectModal: React.FC<Props> = ({ onClose, onCreated }) => {
   const [code, setCode] = useState('')
   const [type, setType] = useState('SIMPLE')
   const [errors, setErrors] = useState<Record<string, string>>({})
-  const [loading, setLoading] = useState(false)
+
+  // Usar React Query mutation
+  const createMutation = useCreateProject()
 
   function normalizeCode(input: string) {
     return input.trim().toUpperCase().replace(/\s+/g, '-')
@@ -49,9 +51,9 @@ const CreateProjectModal: React.FC<Props> = ({ onClose, onCreated }) => {
       code: normalized,
       type: (type as any) || undefined,
     }
-    setLoading(true)
+    
     try {
-      const res = await createProject(dto)
+      const res = await createMutation.mutateAsync(dto)
       onCreated(res)
       onClose()
     } catch (err: any) {
@@ -62,8 +64,6 @@ const CreateProjectModal: React.FC<Props> = ({ onClose, onCreated }) => {
         fieldErrors[k] = parsed.fieldErrors[k][0]
       }
       setErrors(fieldErrors)
-    } finally {
-      setLoading(false)
     }
   }
 
@@ -104,8 +104,8 @@ const CreateProjectModal: React.FC<Props> = ({ onClose, onCreated }) => {
 
           <div className="flex justify-end gap-2 mt-2">
             <button type="button" onClick={onClose} className="px-4 py-2 bg-white border rounded">Cancelar</button>
-            <button type="submit" disabled={loading} className="px-4 py-2 bg-[#4931A9] text-white rounded">
-              {loading ? 'Creando...' : 'Crear'}
+            <button type="submit" disabled={createMutation.isPending} className="px-4 py-2 bg-[#4931A9] text-white rounded">
+              {createMutation.isPending ? 'Creando...' : 'Crear'}
             </button>
           </div>
         </form>

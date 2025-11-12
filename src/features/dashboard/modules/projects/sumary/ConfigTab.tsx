@@ -1,45 +1,38 @@
-import React, { useEffect, useState } from 'react'
+import React, { useState } from 'react'
 import { useParams } from 'react-router-dom'
-import type { MemberResponse, ProjectResponse } from '../types.api'
-import { getProject, addProjectMember, updateProjectMemberRole, removeProjectMember } from '../services/projects.service'
+import type { MemberResponse } from '../types.api'
+import { 
+  useProject, 
+  useAddProjectMember, 
+  useUpdateProjectMemberRole, 
+  useRemoveProjectMember 
+} from '../services/projects.service'
 
 const roles = ['ADMIN', 'MEMBER', 'READER']
 
 const ConfigTab: React.FC = () => {
   const { projectId } = useParams<{ projectId: string }>()
-  const [project, setProject] = useState<ProjectResponse | null>(null)
-  const [loading, setLoading] = useState(false)
   const [email, setEmail] = useState('')
   const [role, setRole] = useState('MEMBER')
   const [error, setError] = useState<string | null>(null)
 
-  useEffect(() => {
-    if (!projectId) return
-    let mounted = true
-    ;(async () => {
-      setLoading(true)
-      try {
-        const res = await getProject(projectId)
-        if (mounted) setProject(res)
-      } catch (err) {
-        console.error('Could not load project', err)
-      } finally {
-        setLoading(false)
-      }
-    })()
-    return () => { mounted = false }
-  }, [projectId])
+  // React Query hooks con caché automático
+  const { data: project, isLoading } = useProject(projectId)
+  const addMemberMutation = useAddProjectMember(projectId!)
+  const updateRoleMutation = useUpdateProjectMemberRole(projectId!)
+  const removeMemberMutation = useRemoveProjectMember(projectId!)
 
   async function handleAddMember(e?: React.FormEvent) {
     e?.preventDefault()
     setError(null)
     if (!projectId) return
-    if (!email.includes('@')) { setError('Email inválido'); return }
+    if (!email.includes('@')) { 
+      setError('Email inválido')
+      return 
+    }
+    
     try {
-      await addProjectMember(projectId, { email: email.trim(), role })
-      // refresh
-      const res = await getProject(projectId)
-      setProject(res)
+      await addMemberMutation.mutateAsync({ email: email.trim(), role })
       setEmail('')
     } catch (err: any) {
       setError(err?.response?.data?.message ?? 'Error agregando miembro')
@@ -48,10 +41,10 @@ const ConfigTab: React.FC = () => {
 
   async function handleChangeRole(memberId: string, newRole: string) {
     if (!projectId) return
+    setError(null)
+    
     try {
-      await updateProjectMemberRole(projectId, memberId, { role: newRole })
-      const res = await getProject(projectId)
-      setProject(res)
+      await updateRoleMutation.mutateAsync({ memberId, role: newRole })
     } catch (err: any) {
       setError(err?.response?.data?.message ?? 'Error actualizando rol')
     }
@@ -59,16 +52,16 @@ const ConfigTab: React.FC = () => {
 
   async function handleRemove(memberId: string) {
     if (!projectId) return
+    setError(null)
+    
     try {
-      await removeProjectMember(projectId, memberId)
-      const res = await getProject(projectId)
-      setProject(res)
+      await removeMemberMutation.mutateAsync(memberId)
     } catch (err: any) {
       setError(err?.response?.data?.message ?? 'Error eliminando miembro')
     }
   }
 
-  if (loading) return <div>Cargando configuración...</div>
+  if (isLoading) return <div>Cargando configuración...</div>
 
   return (
     <div className="mt-4">

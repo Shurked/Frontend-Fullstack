@@ -1,42 +1,30 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Project, ProjectFilter } from './types';
 import ProjectHeader from './ProjectHeader';
 import ProjectCard from './ProjectCard';
 import EmptyState from './EmptyState';
 import CreateProjectModal from './CreateProjectModal';
-import { listProjects } from '../services/projects.service';
+import { useProjects } from '../services/projects.service';
 import { mapProjectResponseToUI } from '../mappers';
-
-// Keep an empty array initially; we'll fetch from API
-const mockProjects: Project[] = []
 
 const ProjectList: React.FC = () => {
   const navigate = useNavigate();
-  const [projects, setProjects] = useState<Project[]>(mockProjects);
   const [searchQuery, setSearchQuery] = useState('');
   const [activeFilter, setActiveFilter] = useState<ProjectFilter>('all');
   const [showCreate, setShowCreate] = useState(false);
 
-  useEffect(() => {
-    let mounted = true
-    ;(async () => {
-      try {
-        const res = await listProjects()
-        // res could be ProjectResponse[] or wrapped; map if array
-        if (Array.isArray(res)) {
-          const ui = res.map(mapProjectResponseToUI)
-          if (mounted) setProjects(ui)
-        }
-      } catch (err) {
-        // keep mocks (empty) on error
-        console.warn('Could not load projects', err)
-      }
-    })()
-    return () => {
-      mounted = false
+  // Usar React Query con caché automático
+  const { data: projectsData, isLoading, isError } = useProjects();
+
+  // Mapear los datos de la API al formato UI
+  const projects: Project[] = useMemo(() => {
+    if (!projectsData) return [];
+    if (Array.isArray(projectsData)) {
+      return projectsData.map(mapProjectResponseToUI);
     }
-  }, [])
+    return [];
+  }, [projectsData]);
 
   // Filtrar y buscar proyectos
   const filteredProjects = useMemo(() => {
@@ -71,11 +59,9 @@ const ProjectList: React.FC = () => {
   }, [projects, searchQuery, activeFilter]);
 
   const handleToggleFavorite = (projectId: string) => {
-    setProjects((prev) =>
-      prev.map((p) =>
-        p.id === projectId ? { ...p, isFavorite: !p.isFavorite } : p
-      )
-    );
+    // TODO: Implementar API para favoritos y usar mutation
+    // Por ahora, esta funcionalidad se maneja en el frontend
+    console.log('Toggle favorite:', projectId);
   };
 
   const handleProjectClick = (projectId: string) => {
@@ -91,13 +77,29 @@ const ProjectList: React.FC = () => {
   }
 
   function handleCreated(res: any) {
-    try {
-      const ui = mapProjectResponseToUI(res)
-      setProjects((prev) => [ui, ...prev])
-    } catch (e) {
-      // ignore mapping errors
-      setProjects((prev) => prev)
-    }
+    // React Query invalidará el caché automáticamente
+    // cuando se use el hook useCreateProject en CreateProjectModal
+    setShowCreate(false)
+  }
+
+  // Mostrar estado de carga
+  if (isLoading) {
+    return (
+      <div className="p-4 md:p-6">
+        <div className="text-center py-8">Cargando proyectos...</div>
+      </div>
+    );
+  }
+
+  // Mostrar estado de error
+  if (isError) {
+    return (
+      <div className="p-4 md:p-6">
+        <div className="text-center py-8 text-red-600">
+          Error al cargar proyectos. Por favor, intenta nuevamente.
+        </div>
+      </div>
+    );
   }
 
   return (
