@@ -8,7 +8,7 @@ import LandingPage from '../features/landing/LandingPage'
 import { LoginPage as Login, RegisterPage as Register } from '../features/auth'
 import {
   WorkTypeStep as WorkType,
-  ProjectNameStep as ProjectName,
+  ProjectNameStep as ProjectName, 
   WorkNeedsStep as WorkNeeds,
   WorkTrackingStep as WorkTracking
 } from '../features/auth'
