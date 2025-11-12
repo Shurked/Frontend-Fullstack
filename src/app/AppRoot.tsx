@@ -1,6 +1,7 @@
 import React from 'react'
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
 import { AuthProvider } from '../features/auth/context/AuthContext'
+import { ProjectProvider } from '../features/dashboard/modules/projects/context/ProjectContext'
 import ProtectedRoute from '../components/ProtectedRoute'
 import LandingPage from '../features/landing/LandingPage'
 
@@ -34,42 +35,44 @@ import Security from '../features/dashboard/modules/configuration/Security'
 const AppRoot: React.FC = () => {
   return (
     <AuthProvider>
-      <Router>
-        <Routes>
-        {/* Landing Page */}
-        <Route path="/" element={<LandingPage />} />
-        
-        {/* Authentication Flow */}
-        <Route path="/auth/login" element={<Login />} />
-        <Route path="/auth/register" element={<Register />} />
-        <Route path="/auth/work-type" element={<ProtectedRoute><WorkType /></ProtectedRoute>} />
-        <Route path="/auth/project-name" element={<ProtectedRoute><ProjectName /></ProtectedRoute>} />
-        <Route path="/auth/work-needs" element={<ProtectedRoute><WorkNeeds /></ProtectedRoute>} />
-        <Route path="/auth/work-tracking" element={<ProtectedRoute><WorkTracking /></ProtectedRoute>} />
+      <ProjectProvider>
+        <Router>
+          <Routes>
+          {/* Landing Page */}
+          <Route path="/" element={<LandingPage />} />
+          
+          {/* Authentication Flow */}
+          <Route path="/auth/login" element={<Login />} />
+          <Route path="/auth/register" element={<Register />} />
+          <Route path="/auth/work-type" element={<ProtectedRoute><WorkType /></ProtectedRoute>} />
+          <Route path="/auth/project-name" element={<ProtectedRoute><ProjectName /></ProtectedRoute>} />
+          <Route path="/auth/work-needs" element={<ProtectedRoute><WorkNeeds /></ProtectedRoute>} />
+          <Route path="/auth/work-tracking" element={<ProtectedRoute><WorkTracking /></ProtectedRoute>} />
 
-        {/* Dashboard con rutas anidadas - PROTEGIDO */}
-        <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>}>
-          <Route index element={<ForYou />} />
-          <Route path="for-you" element={<ForYou />} />
-          <Route path="projects" element={<Projects />} />
-          <Route path="projects/:projectId" element={<ProjectSummary />} />
-          <Route path="templates" element={<Templates />} />
-          <Route path="teams" element={<Teams />} />
-          <Route path="teams/equipo/:teamId" element={<TeamDetail />} />
-          <Route path="calendar" element={<Calendar />} />
-          <Route path="profile/:id" element={<Profile />} />
-        </Route>
+          {/* Dashboard con rutas anidadas - PROTEGIDO */}
+          <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>}>
+            <Route index element={<ForYou />} />
+            <Route path="for-you" element={<ForYou />} />
+            <Route path="projects" element={<Projects />} />
+            <Route path="projects/:projectId" element={<ProjectSummary />} />
+            <Route path="templates" element={<Templates />} />
+            <Route path="teams" element={<Teams />} />
+            <Route path="teams/equipo/:teamId" element={<TeamDetail />} />
+            <Route path="calendar" element={<Calendar />} />
+            <Route path="profile/:id" element={<Profile />} />
+          </Route>
 
-        {/* CONFIGURACIÓN - RUTAS INDEPENDIENTES - PROTEGIDO */}
-        <Route path="/configuration" element={<ProtectedRoute><ConfigurationLayout /></ProtectedRoute>}>
-          <Route index element={<ConfigurationProfile />} /> {/* Ruta por defecto */}
-          <Route path="profile" element={<ConfigurationProfile />} />
-          <Route path="appearance" element={<Appearance />} />
-          <Route path="notifications" element={<Notifications />} />
-          <Route path="security" element={<Security />} />
-        </Route>
-      </Routes>
-      </Router>
+          {/* CONFIGURACIÓN - RUTAS INDEPENDIENTES - PROTEGIDO */}
+          <Route path="/configuration" element={<ProtectedRoute><ConfigurationLayout /></ProtectedRoute>}>
+            <Route index element={<ConfigurationProfile />} /> {/* Ruta por defecto */}
+            <Route path="profile" element={<ConfigurationProfile />} />
+            <Route path="appearance" element={<Appearance />} />
+            <Route path="notifications" element={<Notifications />} />
+            <Route path="security" element={<Security />} />
+          </Route>
+        </Routes>
+        </Router>
+      </ProjectProvider>
     </AuthProvider>
   )
 }

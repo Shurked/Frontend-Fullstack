@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { Board } from './types';
 import KanbanColumn from './KanbanColumn';
 import AddColumnButton from './AddColumnButton';
+import { useProject } from '../context/ProjectContext';
 
-// Datos mock del tablero
+// Datos mock del tablero (fallback)
 const mockBoardData: Board = {
   id: '1',
   projectId: '1',
@@ -45,6 +46,60 @@ const mockBoardData: Board = {
 const BoardView: React.FC = () => {
   const { projectId } = useParams<{ projectId: string }>();
   const [board, setBoard] = useState<Board>(mockBoardData);
+  const { currentTemplate } = useProject();
+
+  // Cuando template cambia, actualizar el tablero basado en el contenido de la template
+  useEffect(() => {
+    if (currentTemplate?.content?.workflows?.columns) {
+      // Si la template tiene columnas definidas, usarlas
+      const columns = currentTemplate.content.workflows.columns.map((col: any) => ({
+        id: col.id || col.name?.toLowerCase().replace(/\s+/g, '-'),
+        title: col.name,
+        tasks: [],
+      }));
+
+      setBoard({
+        id: projectId || '1',
+        projectId: projectId || '1',
+        columns,
+      });
+    } else if (currentTemplate?.templateType === 'KANBAN') {
+      // Template Kanban por defecto
+      setBoard({
+        id: projectId || '1',
+        projectId: projectId || '1',
+        columns: [
+          { id: 'todo', title: 'To Do', tasks: [] },
+          { id: 'in-progress', title: 'In Progress', tasks: [] },
+          { id: 'in-review', title: 'In Review', tasks: [] },
+          { id: 'done', title: 'Done', tasks: [] },
+        ],
+      });
+    } else if (currentTemplate?.templateType === 'SCRUM') {
+      // Template Scrum por defecto
+      setBoard({
+        id: projectId || '1',
+        projectId: projectId || '1',
+        columns: [
+          { id: 'backlog', title: 'Backlog', tasks: [] },
+          { id: 'todo', title: 'To Do', tasks: [] },
+          { id: 'in-progress', title: 'In Progress', tasks: [] },
+          { id: 'in-review', title: 'In Review', tasks: [] },
+          { id: 'done', title: 'Done', tasks: [] },
+        ],
+      });
+    } else {
+      // SIMPLE por defecto
+      setBoard({
+        id: projectId || '1',
+        projectId: projectId || '1',
+        columns: [
+          { id: 'todo', title: 'To Do', tasks: [] },
+          { id: 'done', title: 'Done', tasks: [] },
+        ],
+      });
+    }
+  }, [currentTemplate, projectId]);
 
   const handleTaskClick = (taskId: string) => {
     console.log('Task clicked:', taskId);

@@ -1,3 +1,5 @@
+import type { TemplateDataResponse } from '../types.api'
+
 export interface Project {
   id: string;
   name: string;
@@ -10,6 +12,7 @@ export interface Project {
   lastUpdated: Date;
   description?: string;
   membersCount?: number;
+  template?: TemplateDataResponse;
 }
 
 export type ProjectFilter = 'all' | 'favorites' | 'recent' | 'archived';

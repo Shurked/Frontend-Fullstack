@@ -16,6 +16,21 @@ export interface MemberResponse {
   addedAt: string
 }
 
+export interface TemplateDataResponse {
+  id: string;
+  name: string;
+  description?: string;
+  category?: string;
+  industry?: string;
+  complexity: string;
+  content: Record<string, any>;
+  templateType: string;
+  isPublic: boolean;
+  usageCount: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface ProjectResponse {
   id: string
   name: string
@@ -27,6 +42,7 @@ export interface ProjectResponse {
   createdByEmail: string
   createdByName: string
   members: MemberResponse[]
+  template?: TemplateDataResponse
   createdAt: string
   updatedAt: string
 }

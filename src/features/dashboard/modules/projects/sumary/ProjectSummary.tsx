@@ -1,11 +1,13 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { ProjectDetails, ProjectTab } from './types';
 import ConfigTab from './ConfigTab';
 import SummaryTab from './SummaryTab';
 import { BoardView } from '../panel';
+import { useProject } from '../context/ProjectContext';
+import { getProject } from '../services/projects.service';
 
-// Datos mock (en producción vendrían de una API)
+// Datos mock (fallback si no hay datos de API)
 const mockProjectData: ProjectDetails = {
   id: '1',
   name: 'Plataforma de Desarrollo',
@@ -44,13 +46,78 @@ const ProjectSummary: React.FC = () => {
   const navigate = useNavigate();
   const { projectId } = useParams<{ projectId: string }>();
   const [activeTab, setActiveTab] = useState<ProjectTab>('summary');
-  
-  // En producción, cargarías los datos del proyecto basándote en projectId
-  const project = mockProjectData;
+  const [project, setProject] = useState<ProjectDetails>(mockProjectData);
+  const [loading, setLoading] = useState(true);
+  const { setCurrentProject } = useProject();
+
+  useEffect(() => {
+    if (!projectId) return;
+
+    let isMounted = true;
+
+    (async () => {
+      try {
+        setLoading(true);
+        const res = await getProject(projectId);
+        
+        if (!isMounted) return;
+        
+        // Guardar en contexto
+        setCurrentProject(res);
+
+        // Mapear respuesta a UI
+        const projectUI: ProjectDetails = {
+          id: res.id,
+          name: res.name,
+          type: res.type.charAt(0).toUpperCase() + res.type.slice(1).toLowerCase(),
+          lead: {
+            name: res.createdByName || res.createdByEmail || '—',
+            avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(
+              res.createdByName || res.createdByEmail || 'User'
+            )}&background=4931A9&color=fff`,
+          },
+          stats: {
+            completed: 0,
+            updated: 0,
+            created: 0,
+            duesSoon: 0,
+          },
+          statusBreakdown: {
+            inProgress: 0,
+            inReview: 0,
+            toDo: 0,
+          },
+          recentActivity: [],
+        };
+
+        if (isMounted) setProject(projectUI);
+      } catch (err) {
+        console.error('Error loading project:', err);
+        if (isMounted) {
+          // Usar mock como fallback
+          setProject(mockProjectData);
+        }
+      } finally {
+        if (isMounted) setLoading(false);
+      }
+    })();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [projectId]);
 
   const handleBack = () => {
     navigate('/dashboard/projects');
   };
+
+  if (loading) {
+    return (
+      <div className="p-4 md:p-6 flex items-center justify-center">
+        <p className="text-[#7A869A]">Cargando proyecto...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="p-4 md:p-6">

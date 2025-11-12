@@ -25,5 +25,6 @@ export function mapProjectResponseToUI(p: ProjectResponse): Project {
     lastUpdated: new Date(p.updatedAt),
     description: p.description,
     membersCount: p.members?.length ?? 0,
+    template: p.template, // ✅ PASAR TEMPLATE DINÁMICAMENTE
   }
 }
