@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import type { Task } from './types'
-import { updateTask } from '../services/tasks.service'
+import { useUpdateTask } from '../services/tasks.service'
 
 interface Props {
   task: Task
@@ -15,14 +15,16 @@ const EditTaskModal: React.FC<Props> = ({ task, projectId, onClose, onSaved }) =
   const [status, setStatus] = useState(task.status ?? 'todo')
   const [priority, setPriority] = useState((task.priority as string) ?? 'medium')
   const [assignedTo, setAssignedTo] = useState(task.assignee?.name ?? '')
-  const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+
+  // React Query mutation
+  const updateTaskMutation = useUpdateTask(projectId)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError(null)
     if (!title.trim()) return setError('El título es requerido')
-    setIsLoading(true)
+    
     try {
       const payload: any = {
         title,
@@ -32,7 +34,10 @@ const EditTaskModal: React.FC<Props> = ({ task, projectId, onClose, onSaved }) =
       }
       if (assignedTo.trim()) payload.assignedToId = assignedTo.trim()
 
-      const updated = await updateTask(task.id, payload)
+      const updated = await updateTaskMutation.mutateAsync({
+        id: task.id,
+        payload
+      })
 
       const uiTask: Task = {
         id: updated.id ?? task.id,
@@ -48,8 +53,6 @@ const EditTaskModal: React.FC<Props> = ({ task, projectId, onClose, onSaved }) =
       onClose()
     } catch (err: any) {
       setError(err?.response?.data?.message ?? 'Error al actualizar tarea')
-    } finally {
-      setIsLoading(false)
     }
   }
 
@@ -82,10 +85,11 @@ const EditTaskModal: React.FC<Props> = ({ task, projectId, onClose, onSaved }) =
             <div>
               <label className="block text-sm font-medium mb-1">Estado</label>
               <select value={status} onChange={e => setStatus(e.target.value)} className="w-full border rounded px-3 py-2 bg-[#F8F9FB]">
+                <option value="backlog">Backlog</option>
                 <option value="todo">Por Hacer</option>
-                <option value="in-progress">En Progreso</option>
-                <option value="in-review">En Revisión</option>
-                <option value="done">Hecho</option>
+                <option value="in_progress">En Progreso</option>
+                <option value="done">Completado</option>
+                <option value="cancelled">Cancelado</option>
               </select>
             </div>
             <div>
@@ -105,7 +109,9 @@ const EditTaskModal: React.FC<Props> = ({ task, projectId, onClose, onSaved }) =
 
           <div className="flex justify-end gap-3">
             <button type="button" onClick={onClose} className="px-4 py-2 border rounded">Cancelar</button>
-            <button type="submit" disabled={isLoading} className="px-4 py-2 bg-[#0F1724] text-white rounded">{isLoading ? 'Guardando...' : 'Guardar cambios'}</button>
+            <button type="submit" disabled={updateTaskMutation.isPending} className="px-4 py-2 bg-[#0F1724] text-white rounded">
+              {updateTaskMutation.isPending ? 'Guardando...' : 'Guardar cambios'}
+            </button>
           </div>
         </form>
       </div>

@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
 import type { Task } from './types'
 import { useAuth } from '../../../../auth/context/AuthContext'
+import { useCreateTask } from '../services/tasks.service'
 
 interface Props {
   columnId: string
@@ -16,17 +17,17 @@ const CreateTaskModal: React.FC<Props> = ({ columnId, projectId, onClose, onCrea
   const [status, setStatus] = useState('todo')
   const [priority, setPriority] = useState('medium')
   const [assignedTo, setAssignedTo] = useState('')
-  const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+
+  // React Query mutation
+  const createTaskMutation = useCreateTask(projectId)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError(null)
     if (!title.trim()) return setError('El título es requerido')
-    setIsLoading(true)
+    
     try {
-      const { createTask } = await import('../services/tasks.service')
-
       const payload: any = {
         projectId,
         title,
@@ -36,11 +37,11 @@ const CreateTaskModal: React.FC<Props> = ({ columnId, projectId, onClose, onCrea
       }
       if (assignedTo.trim()) payload.assignedToId = assignedTo.trim()
 
-      const created = await createTask(payload)
+      const created = await createTaskMutation.mutateAsync(payload)
 
       // Build UI task with creator info from Auth
       const creatorName = authUser?.completeName ?? 'Tú'
-  const initials = creatorName.split(' ').map((n: string) => n[0]).join('').toUpperCase().substring(0,2)
+      const initials = creatorName.split(' ').map((n: string) => n[0]).join('').toUpperCase().substring(0,2)
 
       const newTask: Task = {
         id: created.id,
@@ -54,8 +55,6 @@ const CreateTaskModal: React.FC<Props> = ({ columnId, projectId, onClose, onCrea
       onClose()
     } catch (err: any) {
       setError(err?.response?.data?.message ?? 'Error al crear tarea')
-    } finally {
-      setIsLoading(false)
     }
   }
 
@@ -88,10 +87,11 @@ const CreateTaskModal: React.FC<Props> = ({ columnId, projectId, onClose, onCrea
             <div>
               <label className="block text-sm font-medium mb-1">Estado</label>
               <select value={status} onChange={e => setStatus(e.target.value)} className="w-full border rounded px-3 py-2 bg-[#F8F9FB]">
+                <option value="backlog">Backlog</option>
                 <option value="todo">Por Hacer</option>
-                <option value="in-progress">En Progreso</option>
-                <option value="in-review">En Revisión</option>
-                <option value="done">Hecho</option>
+                <option value="in_progress">En Progreso</option>
+                <option value="done">Completado</option>
+                <option value="cancelled">Cancelado</option>
               </select>
             </div>
             <div>
@@ -111,7 +111,9 @@ const CreateTaskModal: React.FC<Props> = ({ columnId, projectId, onClose, onCrea
 
           <div className="flex justify-end gap-3">
             <button type="button" onClick={onClose} className="px-4 py-2 border rounded">Cancelar</button>
-            <button type="submit" disabled={isLoading} className="px-4 py-2 bg-[#0F1724] text-white rounded">{isLoading ? 'Creando...' : 'Crear Tarea'}</button>
+            <button type="submit" disabled={createTaskMutation.isPending} className="px-4 py-2 bg-[#0F1724] text-white rounded">
+              {createTaskMutation.isPending ? 'Creando...' : 'Crear Tarea'}
+            </button>
           </div>
         </form>
       </div>

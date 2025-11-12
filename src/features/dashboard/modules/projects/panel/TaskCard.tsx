@@ -11,6 +11,8 @@ interface TaskCardProps {
 
 const TaskCard: React.FC<TaskCardProps> = ({ task, onTaskClick, onEdit, onDelete, columnId }) => {
   const [menuOpen, setMenuOpen] = useState(false)
+  const [isDragging, setIsDragging] = useState(false)
+  
   const getPriorityColor = (priority?: Task['priority']) => {
     switch (priority) {
       case 'high':
@@ -29,15 +31,22 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, onTaskClick, onEdit, onDelete
       <div
         draggable
         onDragStart={(e) => {
+          setIsDragging(true)
           // Put task id and origin column in dataTransfer
           try {
             e.dataTransfer.setData('application/json', JSON.stringify({ taskId: task.id, fromColumnId: columnId }));
+            e.dataTransfer.effectAllowed = 'move'
           } catch (err) {
             e.dataTransfer.setData('text/plain', task.id);
           }
         }}
+        onDragEnd={() => {
+          setIsDragging(false)
+        }}
         onClick={() => onTaskClick(task.id)}
-        className="bg-white border border-[#DFE1E6] rounded-lg p-3 mb-3 hover:shadow-md transition-shadow cursor-pointer group"
+        className={`bg-white border border-[#DFE1E6] rounded-lg p-3 mb-3 hover:shadow-md transition-all cursor-move group ${
+          isDragging ? 'opacity-50 rotate-2 scale-95' : ''
+        }`}
       >
         {/* three dots menu top-right */}
         <button

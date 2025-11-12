@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Column } from './types';
 import TaskCard from './TaskCard';
 
@@ -19,9 +19,13 @@ const KanbanColumn: React.FC<KanbanColumnProps> = ({
   onEditTask,
   onMoveTask,
 }) => {
+  const [isDragOver, setIsDragOver] = useState(false)
+  
   return (
     <div
-      className="bg-[#F4F5F7] rounded-lg p-4 min-w-[280px] max-w-[320px] flex-shrink-0 group"
+      className={`bg-[#F4F5F7] rounded-lg p-4 min-w-[280px] max-w-[320px] flex-shrink-0 group transition-all ${
+        isDragOver ? 'ring-2 ring-[#4931A9] bg-[#EEF0F3]' : ''
+      }`}
     >
       {/* Header de la columna */}
       <div className="flex items-center justify-between mb-4">
@@ -44,15 +48,27 @@ const KanbanColumn: React.FC<KanbanColumnProps> = ({
 
       {/* Lista de tareas */}
       <div
-        className="space-y-2 mb-3 max-h-[calc(100vh-280px)] overflow-y-auto"
-        onDragOver={(e) => e.preventDefault()}
+        className={`space-y-2 mb-3 max-h-[calc(100vh-280px)] overflow-y-auto transition-all ${
+          isDragOver ? 'bg-white/50 rounded-lg p-2' : ''
+        }`}
+        onDragOver={(e) => {
+          e.preventDefault()
+          setIsDragOver(true)
+        }}
+        onDragLeave={(e) => {
+          e.preventDefault()
+          setIsDragOver(false)
+        }}
         onDrop={(e) => {
-          e.preventDefault();
+          e.preventDefault()
+          setIsDragOver(false)
           try {
             const raw = e.dataTransfer.getData('application/json') || e.dataTransfer.getData('text/plain')
             const parsed = JSON.parse(raw)
             const { taskId, fromColumnId } = parsed
-            if (taskId) onMoveTask?.(taskId, fromColumnId ?? null, column.id)
+            if (taskId && taskId !== column.id) {
+              onMoveTask?.(taskId, fromColumnId ?? null, column.id)
+            }
           } catch (err) {
             // fallback: plain text id
             const id = e.dataTransfer.getData('text/plain')

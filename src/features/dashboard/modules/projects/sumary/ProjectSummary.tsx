@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { ProjectDetails, ProjectTab } from './types';
 import ConfigTab from './ConfigTab';
@@ -109,27 +109,27 @@ const ProjectSummary: React.FC = () => {
     return () => { mounted = false }
   }, [projectId])
 
-  const handleTaskCreated = (activity: any) => {
+  const handleTaskCreated = useCallback((activity: any) => {
     setProject(prev => ({
       ...prev,
       recentActivity: [activity, ...prev.recentActivity]
     }))
-  }
+  }, [])
 
-  const handleTasksUpdated = (tasks: any[]) => {
+  const handleTasksUpdated = useCallback((tasks: any[]) => {
     const toDo = tasks.filter(t => (t.status ?? 'todo') === 'todo').length
-    const inProgress = tasks.filter(t => (t.status ?? 'todo') === 'in-progress').length
-    const inReview = tasks.filter(t => (t.status ?? 'todo') === 'in-review').length
+    const inProgress = tasks.filter(t => (t.status ?? 'todo') === 'in_progress').length
+    const done = tasks.filter(t => (t.status ?? 'todo') === 'done').length
 
     setProject(prev => ({
       ...prev,
       statusBreakdown: {
         toDo,
         inProgress,
-        inReview,
+        inReview: done, // Usando done para inReview temporalmente
       }
     }))
-  }
+  }, [])
 
   const handleBack = () => {
     navigate('/dashboard/projects');

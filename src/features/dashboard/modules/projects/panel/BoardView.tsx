@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useParams } from 'react-router-dom';
 import { Board, Task as UITask } from './types';
 import type { Activity } from '../sumary/types';
@@ -6,41 +6,36 @@ import KanbanColumn from './KanbanColumn';
 import AddColumnButton from './AddColumnButton';
 import CreateTaskModal from './CreateTaskModal';
 import EditTaskModal from './EditTaskModal';
-import { deleteTask, updateTask, getTasks } from '../services/tasks.service';
+import { useTasks, useUpdateTask, useDeleteTask, useMoveTask } from '../services/tasks.service';
 
-// Datos mock del tablero
+// Datos mock del tablero - Estados actualizados según el backend
 const mockBoardData: Board = {
   id: '1',
   projectId: '1',
   columns: [
+    {
+      id: 'backlog',
+      title: 'Backlog',
+      tasks: [],
+    },
     {
       id: 'todo',
       title: 'To Do',
       tasks: [],
     },
     {
-      id: 'in-progress',
+      id: 'in_progress',
       title: 'In Progress',
-      tasks: [
-        {
-          id: 'task-1',
-          title: 'Creación del inicio de sesión',
-          assignee: {
-            name: 'Juan Pérez',
-            avatar: 'https://ui-avatars.com/api/?name=Juan+Perez&background=4931A9&color=fff',
-            initials: 'D',
-          },
-        },
-      ],
-    },
-    {
-      id: 'in-review',
-      title: 'In Review',
       tasks: [],
     },
     {
       id: 'done',
       title: 'Done',
+      tasks: [],
+    },
+    {
+      id: 'cancelled',
+      title: 'Cancelled',
       tasks: [],
     },
   ],
@@ -53,58 +48,59 @@ interface BoardViewProps {
 
 const BoardView: React.FC<BoardViewProps> = ({ onTaskCreated, onTasksUpdated }) => {
   const { projectId } = useParams<{ projectId: string }>();
-  const [board, setBoard] = useState<Board>(mockBoardData);
   const [creatingColumnId, setCreatingColumnId] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
   const [editingTask, setEditingTask] = useState<{ task: UITask; columnId: string } | null>(null);
 
-  // Load tasks from backend when entering the board or when projectId changes
-  useEffect(() => {
-    if (!projectId) return;
+  // React Query hooks con caché automático
+  const { data: tasksData, isLoading, isError } = useTasks(projectId);
+  const updateTaskMutation = useUpdateTask(projectId!);
+  const deleteTaskMutation = useDeleteTask(projectId!);
+  const moveTaskMutation = useMoveTask(projectId!);
 
-    let mounted = true;
-    (async () => {
-      setLoading(true);
-      try {
-        const tasks = await getTasks(projectId);
-
-        if (!mounted) return;
-
-        // Map backend tasks to board columns by status
-        // Build UI tasks and columns using mockBoardData as template (stable)
-        const mappedBoard: Board = {
-          ...mockBoardData,
-          projectId: projectId,
-          columns: mockBoardData.columns.map(col => ({
-            ...col,
-            tasks: tasks
-              .filter((t: any) => ((t.status ?? 'todo') as string) === col.id)
-              .map((t: any) => ({
-                id: t.id,
-                title: t.title ?? t.name ?? 'Sin título',
-                description: t.description,
-                status: t.status,
-                priority: t.priority === 'media' ? 'medium' : (t.priority as any) || undefined,
-                assignee: t.assignedTo ? { name: t.assignedTo.name ?? 'Asignado', avatar: t.assignedTo.avatar ?? '', initials: (t.assignedTo.initials ?? (t.assignedTo.name ? t.assignedTo.name.split(' ').map((n:string)=>n[0]).join('').toUpperCase().substring(0,2) : 'A')) } : undefined,
-                creator: t.reportedBy ? { name: t.reportedBy.completeName ?? t.reportedBy.name ?? 'Desconocido', avatar: t.reportedBy.avatar ?? '', initials: t.reportedBy.initials ?? (t.reportedBy.completeName ? t.reportedBy.completeName.split(' ').map((n:string)=>n[0]).join('').toUpperCase().substring(0,2) : undefined) } : (t.creator ? { name: t.creator.name, avatar: t.creator.avatar ?? '', initials: t.creator.initials } : undefined)
-              }))
+  // Mapear las tareas a las columnas del tablero
+  const board: Board = useMemo(() => {
+    const tasks = tasksData || [];
+    
+    return {
+      ...mockBoardData,
+      projectId: projectId || '1',
+      columns: mockBoardData.columns.map(col => ({
+        ...col,
+        tasks: tasks
+          .filter((t: any) => ((t.status ?? 'todo') as string) === col.id)
+          .map((t: any) => ({
+            id: t.id,
+            title: t.title ?? t.name ?? 'Sin título',
+            description: t.description,
+            status: t.status,
+            priority: t.priority === 'media' ? 'medium' : (t.priority as any) || undefined,
+            assignee: t.assignedTo ? { 
+              name: t.assignedTo.name ?? 'Asignado', 
+              avatar: t.assignedTo.avatar ?? '', 
+              initials: (t.assignedTo.initials ?? (t.assignedTo.name ? t.assignedTo.name.split(' ').map((n:string)=>n[0]).join('').toUpperCase().substring(0,2) : 'A')) 
+            } : undefined,
+            creator: t.reportedBy ? { 
+              name: t.reportedBy.completeName ?? t.reportedBy.name ?? 'Desconocido', 
+              avatar: t.reportedBy.avatar ?? '', 
+              initials: t.reportedBy.initials ?? (t.reportedBy.completeName ? t.reportedBy.completeName.split(' ').map((n:string)=>n[0]).join('').toUpperCase().substring(0,2) : undefined) 
+            } : (t.creator ? { 
+              name: t.creator.name, 
+              avatar: t.creator.avatar ?? '', 
+              initials: t.creator.initials 
+            } : undefined)
           }))
-        }
+      }))
+    };
+  }, [tasksData, projectId]);
 
-        setBoard(mappedBoard);
-
-        // Notify parent about tasks list (flat)
-        const flat: UITask[] = mappedBoard.columns.flatMap((c) => c.tasks);
-        onTasksUpdated?.(flat);
-      } catch (err) {
-        console.error('Error fetching tasks for project', projectId, err);
-      } finally {
-        if (mounted) setLoading(false);
-      }
-    })();
-
-    return () => { mounted = false }
-  }, [projectId]);
+  // Notificar al padre cuando cambien las tareas (sin incluir onTasksUpdated en deps)
+  useEffect(() => {
+    if (tasksData && onTasksUpdated) {
+      const flat: UITask[] = board.columns.flatMap((c) => c.tasks);
+      onTasksUpdated(flat);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tasksData, board]);
 
   const handleTaskClick = (taskId: string) => {
     console.log('Task clicked:', taskId);
@@ -116,14 +112,9 @@ const BoardView: React.FC<BoardViewProps> = ({ onTaskCreated, onTasksUpdated }) 
   };
 
   const handleCreateTask = (task: UITask, columnId: string) => {
-    setBoard(prev => {
-      const next = {
-        ...prev,
-        columns: prev.columns.map(c => c.id === columnId ? { ...c, tasks: [task, ...c.tasks] } : c)
-      }
-      onTasksUpdated?.(next.columns.flatMap(c => c.tasks))
-      return next
-    })
+    // React Query invalidará el caché automáticamente
+    // cuando se use el hook useCreateTask en CreateTaskModal
+    
     // Notify parent (ProjectSummary) about the creation so it can add an activity
     try {
       const activity: Activity = {
@@ -147,19 +138,12 @@ const BoardView: React.FC<BoardViewProps> = ({ onTaskCreated, onTasksUpdated }) 
 
   const handleDeleteTask = async (taskId: string) => {
     try {
-      await deleteTask(taskId)
-      setBoard(prev => {
-        const next = {
-          ...prev,
-          columns: prev.columns.map(c => ({ ...c, tasks: c.tasks.filter(t => t.id !== taskId) }))
-        }
-        onTasksUpdated?.(next.columns.flatMap(c => c.tasks))
-        return next
-      })
+      await deleteTaskMutation.mutateAsync(taskId)
     } catch (err) {
       console.error('Delete task error', err)
     }
   }
+  
   const handleEditTask = (taskId: string, columnId?: string) => {
     // Find the task in the board and open edit modal
     const colId = columnId ?? board.columns.find(c => c.tasks.some(t => t.id === taskId))?.id
@@ -171,93 +155,39 @@ const BoardView: React.FC<BoardViewProps> = ({ onTaskCreated, onTasksUpdated }) 
 
   const handleSaveEdit = async (updatedTask: UITask) => {
     try {
-      // Update UI optimistically: remove old and insert into correct column
-      setBoard(prev => {
-        // remove old
-        const withoutOld = prev.columns.map(c => ({ ...c, tasks: c.tasks.filter(t => t.id !== updatedTask.id) }))
-        // insert in target column (based on updatedTask.status)
-        const targetId = updatedTask.status ?? prev.columns[0].id
-        const next = {
-          ...prev,
-          columns: withoutOld.map(c => c.id === targetId ? { ...c, tasks: [updatedTask, ...c.tasks] } : c)
+      await updateTaskMutation.mutateAsync({
+        id: updatedTask.id,
+        payload: {
+          title: updatedTask.title,
+          description: updatedTask.description,
+          status: updatedTask.status,
+          priority: updatedTask.priority === 'medium' ? 'media' : updatedTask.priority,
         }
-        onTasksUpdated?.(next.columns.flatMap(c => c.tasks))
-        return next
-      })
-      // Persist to backend
-      await updateTask(updatedTask.id, {
-        title: updatedTask.title,
-        description: updatedTask.description,
-        status: updatedTask.status,
-        priority: updatedTask.priority === 'medium' ? 'media' : updatedTask.priority,
       })
     } catch (err) {
       console.error('Error saving edited task', err)
-      // On error, re-fetch tasks for the project to sync
-      if (projectId) {
-        try {
-          const tasks = await getTasks(projectId)
-          const mappedBoard: Board = {
-            ...mockBoardData,
-            projectId: projectId,
-            columns: mockBoardData.columns.map(col => ({
-              ...col,
-              tasks: tasks.filter((t: any) => (t.status ?? 'todo') === col.id).map((t: any) => ({
-                id: t.id,
-                title: t.title ?? t.name ?? 'Sin título',
-                description: t.description,
-                status: t.status,
-                priority: t.priority === 'media' ? 'medium' : (t.priority as any) || undefined,
-                assignee: t.assignedTo ? { name: t.assignedTo.name ?? 'Asignado', avatar: t.assignedTo.avatar ?? '', initials: (t.assignedTo.initials ?? (t.assignedTo.name ? t.assignedTo.name.split(' ').map((n:string)=>n[0]).join('').toUpperCase().substring(0,2) : 'A')) } : undefined,
-                creator: t.reportedBy ? { name: t.reportedBy.completeName ?? t.reportedBy.name ?? 'Desconocido', avatar: t.reportedBy.avatar ?? '', initials: t.reportedBy.initials ?? (t.reportedBy.completeName ? t.reportedBy.completeName.split(' ').map((n:string)=>n[0]).join('').toUpperCase().substring(0,2) : undefined) } : (t.creator ? { name: t.creator.name, avatar: t.creator.avatar ?? '', initials: t.creator.initials } : undefined)
-              }))
-            }))
-          }
-          setBoard(mappedBoard)
-          onTasksUpdated?.(mappedBoard.columns.flatMap((c) => c.tasks))
-        } catch (err2) {
-          console.error('Error reloading tasks after edit failure', err2)
-        }
-      }
     } finally {
       setEditingTask(null)
     }
   }
 
   const handleMoveTask = async (taskId: string, fromColumnId: string | null, toColumnId: string) => {
-    // Optimistic move in UI
-    setBoard(prev => {
-      let movingTask: UITask | undefined
-      const newCols = prev.columns.map(c => {
-        if (c.id === fromColumnId) {
-          const filtered = c.tasks.filter(t => {
-            if (t.id === taskId) {
-              movingTask = t
-              return false
-            }
-            return true
-          })
-          return { ...c, tasks: filtered }
-        }
-        return c
-      })
-
-      if (movingTask) {
-        const next = {
-          ...prev,
-          columns: newCols.map(c => c.id === toColumnId ? { ...c, tasks: [movingTask!, ...c.tasks] } : c)
-        }
-        onTasksUpdated?.(next.columns.flatMap(c => c.tasks))
-        return next
-      }
-      return prev
-    })
+    // Validar que el estado de destino sea válido
+    const validStatuses = ['backlog', 'todo', 'in_progress', 'done', 'cancelled'];
+    if (!validStatuses.includes(toColumnId)) {
+      console.error('Invalid status:', toColumnId);
+      return;
+    }
 
     try {
-      await updateTask(taskId, { status: toColumnId })
+      // Actualización optimista: el UI se actualiza inmediatamente
+      await moveTaskMutation.mutateAsync({
+        taskId,
+        newStatus: toColumnId
+      })
     } catch (err) {
       console.error('Move task backend error', err)
-      // On error, revert by re-fetch or simple reload; for now, we will console and let user refresh
+      // El error se maneja automáticamente en useMoveTask (revertirá el cambio)
     }
   }
 
@@ -266,8 +196,60 @@ const BoardView: React.FC<BoardViewProps> = ({ onTaskCreated, onTasksUpdated }) 
     // Aquí se implementaría la lógica para agregar una nueva columna
   };
 
+  // Estado de carga con skeleton
+  if (isLoading) {
+    return (
+      <div className="h-full">
+        <div className="flex items-center justify-end mb-3">
+          <div className="h-10 w-32 bg-gray-200 rounded-md animate-pulse"></div>
+        </div>
+        <div className="overflow-x-auto pb-4">
+          <div className="flex gap-4 min-w-min">
+            {[1, 2, 3, 4].map((i) => (
+              <div key={i} className="w-80 flex-shrink-0">
+                <div className="bg-white rounded-lg p-4 shadow-sm border border-gray-200">
+                  <div className="h-6 w-32 bg-gray-200 rounded mb-4 animate-pulse"></div>
+                  <div className="space-y-3">
+                    {[1, 2].map((j) => (
+                      <div key={j} className="bg-gray-50 rounded-lg p-3 border border-gray-100">
+                        <div className="h-4 w-3/4 bg-gray-200 rounded mb-2 animate-pulse"></div>
+                        <div className="h-3 w-1/2 bg-gray-200 rounded animate-pulse"></div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Estado de error
+  if (isError) {
+    return (
+      <div className="h-full flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-red-600 mb-2">Error al cargar las tareas</p>
+          <p className="text-gray-500 text-sm">Por favor, intenta recargar la página</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="h-full">
+    <div className="h-full relative">
+      {/* Indicador de que se está moviendo una tarea */}
+      {moveTaskMutation.isPending && (
+        <div className="absolute top-0 right-0 z-50 mt-2 mr-2">
+          <div className="bg-blue-500 text-white px-4 py-2 rounded-lg shadow-lg flex items-center gap-2">
+            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+            <span className="text-sm">Moviendo tarea...</span>
+          </div>
+        </div>
+      )}
+      
       {/* Toolbar */}
       <div className="flex items-center justify-end mb-3">
         <button
