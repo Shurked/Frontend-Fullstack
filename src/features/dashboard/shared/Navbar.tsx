@@ -31,7 +31,7 @@ const Navbar = () => {
       : (authUser.email ? authUser.email[0].toUpperCase() : 'U')
   } : {
     id: '1',
-    name: 'Usuario',
+    name: ' ',
     avatar: null,
     initials: 'U'
   };
