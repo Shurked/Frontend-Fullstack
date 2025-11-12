@@ -35,6 +35,13 @@ const INDUSTRY_OPTIONS = [
   { value: 'OTHER', label: 'Other' }
 ]
 
+const TEMPLATE_TYPE_OPTIONS = [
+  { value: 'SIMPLE', label: 'Simple' },
+  { value: 'SCRUM', label: 'Scrum' },
+  { value: 'KANBAN', label: 'Kanban' },
+  { value: 'WATERFALL', label: 'Waterfall' }
+]
+
 const CreateTemplateModal: React.FC<CreateTemplateModalProps> = ({
   isOpen,
   onClose,
@@ -46,6 +53,7 @@ const CreateTemplateModal: React.FC<CreateTemplateModalProps> = ({
     category: '',
     industry: '',
     complexity: 'MEDIUM',
+    templateType: 'SIMPLE',
     isPublic: false
   })
 
@@ -79,7 +87,8 @@ const CreateTemplateModal: React.FC<CreateTemplateModalProps> = ({
         category: formData.category as any,
         industry: formData.industry as any,
         complexity: formData.complexity as any,
-        content: {}, // Estructura vacía por defecto
+        templateType: formData.templateType as any,
+        content: {}, // El backend generará el contenido estructurado automáticamente
         isPublic: formData.isPublic
       }
 
@@ -94,6 +103,7 @@ const CreateTemplateModal: React.FC<CreateTemplateModalProps> = ({
         category: response.category,
         industry: response.industry,
         complexity: response.complexity,
+        templateType: response.templateType,
         content: response.content,
         isPublic: response.isPublic,
         usageCount: response.usageCount,
@@ -116,6 +126,7 @@ const CreateTemplateModal: React.FC<CreateTemplateModalProps> = ({
         category: '',
         industry: '',
         complexity: 'MEDIUM',
+        templateType: 'SIMPLE',
         isPublic: false
       })
     } catch (err: any) {
@@ -126,17 +137,35 @@ const CreateTemplateModal: React.FC<CreateTemplateModalProps> = ({
     }
   }
 
+  const handleClose = () => {
+    if (!loading) {
+      onClose()
+      // Reset form al cerrar
+      setFormData({
+        name: '',
+        description: '',
+        category: '',
+        industry: '',
+        complexity: 'MEDIUM',
+        templateType: 'SIMPLE',
+        isPublic: false
+      })
+      setError(null)
+    }
+  }
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-      <div className="bg-white rounded-lg w-full max-w-md mx-4 p-6">
+      <div className="bg-white rounded-lg w-full max-w-md mx-4 max-h-[90vh] overflow-y-auto">
         {/* Header */}
-        <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center justify-between p-6 border-b border-gray-200 sticky top-0 bg-white">
           <h3 className="text-lg font-semibold text-[#172B4D]">
             Crear nuevo template
           </h3>
           <button
-            onClick={onClose}
+            onClick={handleClose}
             className="text-[#7A869A] hover:text-[#172B4D] transition-colors"
+            disabled={loading}
           >
             <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -145,7 +174,7 @@ const CreateTemplateModal: React.FC<CreateTemplateModalProps> = ({
         </div>
 
         {/* Form */}
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="p-6 space-y-4">
           {/* Error message */}
           {error && (
             <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
@@ -182,6 +211,25 @@ const CreateTemplateModal: React.FC<CreateTemplateModalProps> = ({
               rows={3}
               disabled={loading}
             />
+          </div>
+
+          {/* Tipo de Template */}
+          <div>
+            <label className="block text-sm font-medium text-[#172B4D] mb-1">
+              Tipo de Template
+            </label>
+            <select
+              value={formData.templateType}
+              onChange={(e) => setFormData({ ...formData, templateType: e.target.value })}
+              className="w-full px-4 py-2 border border-[#DFE1E6] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#4931A9] focus:border-transparent transition-all"
+              disabled={loading}
+            >
+              {TEMPLATE_TYPE_OPTIONS.map(opt => (
+                <option key={opt.value} value={opt.value}>
+                  {opt.label}
+                </option>
+              ))}
+            </select>
           </div>
 
           {/* Complejidad */}
@@ -258,22 +306,43 @@ const CreateTemplateModal: React.FC<CreateTemplateModalProps> = ({
             </label>
           </div>
 
+          {/* Información adicional */}
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+            <h4 className="text-sm font-medium text-[#172B4D] mb-1">
+              Información importante
+            </h4>
+            <p className="text-xs text-[#7A869A]">
+              El contenido del template se generará automáticamente según el tipo seleccionado. 
+              Podrás personalizarlo después de crear el template.
+            </p>
+          </div>
+
           {/* Botones */}
-          <div className="flex justify-end gap-3 pt-4">
+          <div className="flex justify-end gap-3 pt-4 border-t border-gray-200">
             <button
               type="button"
-              onClick={onClose}
-              className="px-4 py-2 border border-[#DFE1E6] rounded-lg text-[#172B4D] hover:bg-[#F4F5F7] transition-colors"
+              onClick={handleClose}
+              className="px-4 py-2 border border-[#DFE1E6] rounded-lg text-[#172B4D] hover:bg-[#F4F5F7] transition-colors disabled:opacity-50"
               disabled={loading}
             >
               Cancelar
             </button>
             <button
               type="submit"
-              className="px-4 py-2 bg-[#4931A9] text-white rounded-lg hover:bg-[#3d2889] disabled:opacity-50 transition-colors"
+              className="px-4 py-2 bg-[#4931A9] text-white rounded-lg hover:bg-[#3d2889] disabled:opacity-50 transition-colors flex items-center gap-2"
               disabled={loading}
             >
-              {loading ? 'Creando...' : 'Crear template'}
+              {loading ? (
+                <>
+                  <svg className="animate-spin h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  Creando...
+                </>
+              ) : (
+                'Crear template'
+              )}
             </button>
           </div>
         </form>

@@ -21,6 +21,7 @@ export function mapTemplateResponseToUI(dto: TemplateResponseDto): Template {
     category: dto.category,
     industry: dto.industry,
     complexity: formatComplexity(dto.complexity),
+    templateType: dto.templateType, // ✅ NUEVO
     content: dto.content,
     isPublic: dto.isPublic,
     usageCount: dto.usageCount,
@@ -50,7 +51,8 @@ export function mapUIToCreateDto(template: Partial<Template>): any {
     description: template.description,
     category: template.category,
     industry: template.industry,
-    complexity: template.complexity?.toUpperCase(), // "Simple" → "SIMPLE"
+    complexity: template.complexity?.toUpperCase(),
+    templateType: template.templateType, // ✅ NUEVO
     content: template.content || {},
     isPublic: template.isPublic ?? false
   }
@@ -67,6 +69,7 @@ export function mapUIToUpdateDto(template: Partial<Template>): any {
   if (template.category !== undefined) dto.category = template.category
   if (template.industry !== undefined) dto.industry = template.industry
   if (template.complexity !== undefined) dto.complexity = template.complexity.toUpperCase()
+  if (template.templateType !== undefined) dto.templateType = template.templateType // ✅ NUEVO
   if (template.content !== undefined) dto.content = template.content
   if (template.isPublic !== undefined) dto.isPublic = template.isPublic
   

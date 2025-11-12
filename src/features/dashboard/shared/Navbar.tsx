@@ -26,7 +26,7 @@ const Navbar = () => {
     id: authUser.id,
     name: authUser.completeName,
     avatar: null,
-    initials: authUser.completeName.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2)
+    //initials: authUser.completeName.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2)
   } : {
     id: '1',
     name: ' ',

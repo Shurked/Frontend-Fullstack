@@ -1,9 +1,7 @@
 // src/features/dashboard/modules/templates/types/template.types.ts
 
-// ============================================
-// TIPOS DEL BACKEND (según tu API)
-// ============================================
 export type TemplateComplexity = 'SIMPLE' | 'MEDIUM' | 'COMPLEX'
+export type TemplateType = 'SIMPLE' | 'SCRUM' | 'KANBAN' | 'WATERFALL'
 
 export interface TemplateResponseDto {
   id: string
@@ -12,15 +10,16 @@ export interface TemplateResponseDto {
   category?: string
   industry?: string
   complexity: TemplateComplexity
-  content: Record<string, any> // Estructura JSON de fases/tareas
+  templateType: TemplateType // ✅ NUEVO CAMPO
+  content: Record<string, any>
   isPublic: boolean
   usageCount: number
   rating?: number
   createdById: string
   createdByEmail?: string
   createdByName?: string
-  createdAt: string // ISO date
-  updatedAt: string // ISO date
+  createdAt: string
+  updatedAt: string
 }
 
 export interface CreateTemplateDto {
@@ -29,6 +28,7 @@ export interface CreateTemplateDto {
   category?: string
   industry?: string
   complexity?: TemplateComplexity
+  templateType?: TemplateType // ✅ NUEVO CAMPO
   content: Record<string, any>
   isPublic?: boolean
 }
@@ -39,28 +39,20 @@ export interface UpdateTemplateDto {
   category?: string
   industry?: string
   complexity?: TemplateComplexity
+  templateType?: TemplateType // ✅ NUEVO CAMPO
   content?: Record<string, any>
   isPublic?: boolean
 }
 
-export interface TemplateFilterDto {
-  category?: string
-  industry?: string
-  complexity?: TemplateComplexity
-  isPublic?: boolean
-  minRating?: number
-}
-
-// ============================================
-// TIPOS PARA LA UI (frontend interno)
-// ============================================
+// Para la UI
 export interface Template {
   id: string
   name: string
   description?: string
   category?: string
   industry?: string
-  complexity: string // Para mostrar en UI (ej: "Simple", "Medium", "Complex")
+  complexity: string
+  templateType: TemplateType // ✅ NUEVO CAMPO
   content: Record<string, any>
   isPublic: boolean
   usageCount: number
@@ -71,14 +63,4 @@ export interface Template {
   }
   lastUpdated: Date
   createdAt: Date
-}
-
-// Para los filtros en la UI
-export interface TemplateFilters {
-  search?: string
-  category?: string
-  industry?: string
-  complexity?: TemplateComplexity
-  onlyPublic?: boolean
-  minRating?: number
 }

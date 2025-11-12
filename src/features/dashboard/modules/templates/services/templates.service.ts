@@ -74,3 +74,18 @@ export async function searchTemplates(filters: {
   //return res.data?.data ?? res.data
   return res.data.data 
 }
+
+export async function useTemplate(templateId: string, projectName: string): Promise<any> {
+  const res = await api.post(`/api/projects/from-template/${templateId}`, {
+    name: projectName
+  })
+  return res.data.data
+}
+
+/**
+ * Incrementa el contador de uso de un template
+ * Backend: PATCH /api/templates/:templateId/usage
+ */
+export async function incrementTemplateUsage(templateId: string): Promise<void> {
+  await api.patch(`/api/templates/${templateId}/usage`)
+}
