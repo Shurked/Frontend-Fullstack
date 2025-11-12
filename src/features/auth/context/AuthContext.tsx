@@ -70,10 +70,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const login = async (credentials: LoginCredentials) => {
     try {
       const response = await authService.login(credentials)
+      // Normalizar distintas formas de respuesta del backend
+      const user = (response as any)?.user ?? (response as any)?.data?.user ?? (response as any)?.data?.data?.user ?? null
+      const accessToken = (response as any)?.accessToken ?? (response as any)?.data?.accessToken ?? (response as any)?.data?.data?.accessToken ?? null
+
       setAuthState({
-        user: response.user,
-        accessToken: response.accessToken,
-        isAuthenticated: true,
+        user,
+        accessToken,
+        isAuthenticated: !!user,
         isLoading: false,
       })
     } catch (error) {
@@ -85,10 +89,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const register = async (credentials: RegisterCredentials) => {
     try {
       const response = await authService.register(credentials)
+      // Normalizar distintas formas de respuesta del backend
+      const user = (response as any)?.user ?? (response as any)?.data?.user ?? (response as any)?.data?.data?.user ?? null
+      const accessToken = (response as any)?.accessToken ?? (response as any)?.data?.accessToken ?? (response as any)?.data?.data?.accessToken ?? null
+
       setAuthState({
-        user: response.user,
-        accessToken: response.accessToken,
-        isAuthenticated: true,
+        user,
+        accessToken,
+        isAuthenticated: !!user,
         isLoading: false,
       })
     } catch (error) {
