@@ -4,6 +4,8 @@ import { ProjectDetails, ProjectTab } from './types';
 import ConfigTab from './ConfigTab';
 import SummaryTab from './SummaryTab';
 import { BoardView } from '../panel';
+import { getProject } from '../services/projects.service';
+import { getTasks } from '../../projects/services/tasks.service';
 
 // Datos mock (en producción vendrían de una API)
 const mockProjectData: ProjectDetails = {
@@ -46,7 +48,88 @@ const ProjectSummary: React.FC = () => {
   const [activeTab, setActiveTab] = useState<ProjectTab>('summary');
   
   // En producción, cargarías los datos del proyecto basándote en projectId
-  const project = mockProjectData;
+  const [project, setProject] = useState<ProjectDetails>(mockProjectData);
+
+  // Load project details and recent activity from backend on mount / projectId change
+  React.useEffect(() => {
+    if (!projectId) return;
+
+    let mounted = true
+    ;(async () => {
+      try {
+        // fetch project basic info
+        const p = await getProject(projectId)
+        if (!mounted) return
+
+        // map returned project info into our ProjectDetails partially
+        setProject(prev => ({
+          ...prev,
+          id: p.id ?? prev.id,
+          name: p.name ?? prev.name,
+          lead: {
+            name: p.createdByName ?? prev.lead.name,
+            avatar: p.createdByEmail ? `https://ui-avatars.com/api/?name=${encodeURIComponent(p.createdByName||p.createdByEmail)}&background=4931A9&color=fff` : prev.lead.avatar,
+          }
+        }))
+
+        // fetch tasks for the project and compute status breakdown + recent activity
+        const tasks = await getTasks(projectId)
+        if (!mounted) return
+
+        const toDo = tasks.filter((t:any) => (t.status ?? 'todo') === 'todo').length
+        const inProgress = tasks.filter((t:any) => (t.status ?? 'todo') === 'in-progress').length
+        const inReview = tasks.filter((t:any) => (t.status ?? 'todo') === 'in-review').length
+
+        // recent activity: take last 8 events based on createdAt/updatedAt
+        const activities = (tasks || [])
+          .map((t:any) => ({
+            id: t.id,
+            user: {
+              name: t.reportedBy?.completeName ?? t.reportedBy?.name ?? (t.creator?.name ?? 'Desconocido'),
+              avatar: t.reportedBy?.avatar ?? '',
+              initials: (t.reportedBy?.completeName ?? t.reportedBy?.name ?? (t.creator?.name ?? 'D')).split(' ').map((n:string)=>n[0]).join('').toUpperCase().substring(0,2),
+            },
+            action: `creó la tarea "${t.title ?? t.name ?? 'Sin título'}"`,
+            timestamp: new Date(t.createdAt ?? t.updatedAt ?? Date.now()),
+            type: 'creation' as const,
+          }))
+          .sort((a:any,b:any) => +new Date(b.timestamp) - +new Date(a.timestamp))
+          .slice(0,8)
+
+        setProject(prev => ({
+          ...prev,
+          statusBreakdown: { toDo, inProgress, inReview },
+          recentActivity: activities,
+        }))
+      } catch (err) {
+        console.error('Error loading project or tasks', err)
+      }
+    })()
+
+    return () => { mounted = false }
+  }, [projectId])
+
+  const handleTaskCreated = (activity: any) => {
+    setProject(prev => ({
+      ...prev,
+      recentActivity: [activity, ...prev.recentActivity]
+    }))
+  }
+
+  const handleTasksUpdated = (tasks: any[]) => {
+    const toDo = tasks.filter(t => (t.status ?? 'todo') === 'todo').length
+    const inProgress = tasks.filter(t => (t.status ?? 'todo') === 'in-progress').length
+    const inReview = tasks.filter(t => (t.status ?? 'todo') === 'in-review').length
+
+    setProject(prev => ({
+      ...prev,
+      statusBreakdown: {
+        toDo,
+        inProgress,
+        inReview,
+      }
+    }))
+  }
 
   const handleBack = () => {
     navigate('/dashboard/projects');
@@ -126,7 +209,7 @@ const ProjectSummary: React.FC = () => {
       {activeTab === 'summary' ? (
         <SummaryTab project={project} />
       ) : activeTab === 'board' ? (
-        <BoardView />
+        <BoardView onTaskCreated={handleTaskCreated} onTasksUpdated={handleTasksUpdated} />
       ) : (
         <ConfigTab />
       )}

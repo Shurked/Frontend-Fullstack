@@ -1,11 +1,19 @@
 export interface Task {
   id: string;
   title: string;
+  description?: string;
+  status?: string;
   priority?: 'low' | 'medium' | 'high';
   assignee?: {
     name: string;
     avatar: string;
     initials: string;
+  };
+  // Creator (who reported/created the task)
+  creator?: {
+    name: string;
+    avatar?: string;
+    initials?: string;
   };
 }
 

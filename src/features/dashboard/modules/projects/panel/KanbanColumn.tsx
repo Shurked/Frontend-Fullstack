@@ -6,12 +6,18 @@ interface KanbanColumnProps {
   column: Column;
   onTaskClick: (taskId: string) => void;
   onAddTask: (columnId: string) => void;
+  onDeleteTask?: (taskId: string) => void | Promise<void>;
+  onEditTask?: (taskId: string, columnId?: string) => void | Promise<void>;
+  onMoveTask?: (taskId: string, fromColumnId: string | null, toColumnId: string) => void | Promise<void>;
 }
 
 const KanbanColumn: React.FC<KanbanColumnProps> = ({
   column,
   onTaskClick,
   onAddTask,
+  onDeleteTask,
+  onEditTask,
+  onMoveTask,
 }) => {
   return (
     <div
@@ -37,11 +43,34 @@ const KanbanColumn: React.FC<KanbanColumnProps> = ({
       </div>
 
       {/* Lista de tareas */}
-      <div className="space-y-2 mb-3 max-h-[calc(100vh-280px)] overflow-y-auto">
-        {column.tasks.map((task) => (
-          <TaskCard key={task.id} task={task} onTaskClick={onTaskClick} />
-        ))}
-      </div>
+      <div
+        className="space-y-2 mb-3 max-h-[calc(100vh-280px)] overflow-y-auto"
+        onDragOver={(e) => e.preventDefault()}
+        onDrop={(e) => {
+          e.preventDefault();
+          try {
+            const raw = e.dataTransfer.getData('application/json') || e.dataTransfer.getData('text/plain')
+            const parsed = JSON.parse(raw)
+            const { taskId, fromColumnId } = parsed
+            if (taskId) onMoveTask?.(taskId, fromColumnId ?? null, column.id)
+          } catch (err) {
+            // fallback: plain text id
+            const id = e.dataTransfer.getData('text/plain')
+            if (id) onMoveTask?.(id, null, column.id)
+          }
+        }}
+      >
+          {column.tasks.map((task) => (
+            <TaskCard
+              key={task.id}
+              columnId={column.id}
+              task={task}
+              onTaskClick={onTaskClick}
+              onDelete={(id) => onDeleteTask?.(id)}
+              onEdit={(id) => onEditTask?.(id, column.id)}
+            />
+          ))}
+        </div>
 
       {/* Botón agregar tarea */}
       <button
