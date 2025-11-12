@@ -2,6 +2,40 @@
 
 Sistema de gestión de proyectos y colaboración en equipo construido con React, TypeScript, Vite y Tailwind CSS, con autenticación completa integrada con backend REST API.
 
+## 🚀 Configuración Inicial
+
+### 1. Instalar Dependencias
+```bash
+npm install
+```
+
+### 2. Configurar Variables de Entorno
+Copia el archivo `.env.example` a `.env`:
+```bash
+cp .env.example .env
+```
+
+Edita el archivo `.env` con la URL de tu backend:
+```env
+# Desarrollo local
+VITE_API_BASE_URL=http://localhost:3000
+
+# O producción
+VITE_API_BASE_URL=https://kuska-server.onrender.com
+```
+
+### 3. Ejecutar en Desarrollo
+```bash
+npm run dev
+```
+
+### 4. Build para Producción
+```bash
+npm run build
+```
+
+El build de producción usará automáticamente `.env.production` si existe, o las variables de entorno configuradas en tu plataforma de hosting.
+
 ## Estructura del Proyecto
 
 ```

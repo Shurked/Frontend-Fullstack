@@ -1,6 +1,9 @@
 import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios'
 
-const BASE_URL = 'http://localhost:3000'
+// Obtener la URL base desde las variables de entorno
+// En desarrollo usará http://localhost:3000
+// En producción usará https://kuska-server.onrender.com
+const BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000'
 
 // Crear instancia de axios
 export const api = axios.create({
