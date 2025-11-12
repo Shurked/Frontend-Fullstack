@@ -5,8 +5,19 @@ interface NavbarProps {
 }
 
 const Navbar: React.FC<NavbarProps> = ({ isHidden = false }) => {
+  const [isScrolled, setIsScrolled] = React.useState(false);
+
+  React.useEffect(() => {
+    const handleScroll = () => {
+      setIsScrolled(window.scrollY > 50);
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
   return (
-    <nav className={`landing-navbar ${isHidden ? 'navbar-hidden' : ''}`}>
+    <nav className={`landing-navbar ${isHidden ? 'navbar-hidden' : ''} ${isScrolled && !isHidden ? 'navbar-scrolled' : ''}`}>
       <div className="flex items-center gap-2 sm:gap-3">
         <img
           src="/kuska-logov2.png"
@@ -32,6 +43,7 @@ const Navbar: React.FC<NavbarProps> = ({ isHidden = false }) => {
           </a>
         </li>
       </ul>
+
     </nav>
   );
 };

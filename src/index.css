@@ -3,31 +3,48 @@
 @layer utilities {
   .landing-navbar {
     position: fixed;
-    top: 1rem;
+    top: 2rem;
     left: 50%;
     transform: translateX(-50%);
-    width: calc(100% - 2rem);
-    max-width: 900px;
+    width: calc(100% - 4rem);
+    max-width: calc(1280px * 0.65 - 2rem);
     z-index: 50;
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 0.5rem 1rem;
+    padding: 1rem 2rem;
     background-color: white;
-    border-radius: 0.75rem;
-    box-shadow: 0 25px 50px -12px rgb(0 0 0 / 0.25);
-    transition: transform 0.3s ease-in-out, opacity 0.3s ease-in-out;
+    border-radius: 1rem;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+    transition: transform 0.3s ease-in-out, opacity 0.3s ease-in-out, max-width 0.3s ease-in-out, left 0.3s ease-in-out;
+  }
+
+  @media (min-width: 1280px) {
+    .landing-navbar {
+      left: calc(50% - 640px + (1280px * 0.65 / 2));
+      transform: translateX(-50%);
+    }
   }
 
   @media (min-width: 640px) {
     .landing-navbar {
-      top: 1.5rem;
-      padding: 0.75rem 1.5rem;
+      padding: 1rem 2.5rem;
     }
+  }
+
+  .navbar-scrolled {
+    max-width: 1200px;
+    left: 50%;
   }
 
   .navbar-hidden {
     transform: translateX(-50%) translateY(-150%);
     opacity: 0;
+  }
+
+  @media (min-width: 1280px) {
+    .navbar-hidden {
+      transform: translateX(-50%) translateY(-150%);
+    }
   }
 }

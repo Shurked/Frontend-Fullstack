@@ -3,17 +3,20 @@ import React, { useState } from "react";
 interface Feature {
   id: number;
   title: string;
+  description: string;
   image: string;
   alt: string;
 }
 
 const Functionalities: React.FC = () => {
   const [selected, setSelected] = useState<number | null>(null);
+  const [flipped, setFlipped] = useState<number | null>(null);
 
   const features: Feature[] = [
     {
       id: 1,
       title: "Gestión de Tareas",
+      description: "Organiza y prioriza tu trabajo de manera eficiente. Crea, asigna y da seguimiento a tareas con estados personalizables. Establece fechas límite, añade etiquetas y gestiona dependencias entre tareas para mantener tu equipo alineado.",
       image:
         "https://media.licdn.com/dms/image/v2/C5612AQHgiN2tGa-WMA/article-cover_image-shrink_720_1280/article-cover_image-shrink_720_1280/0/1641942863741?e=2147483647&v=beta&t=GkKhiqDc71UyUZNYdHfEffyV4AfUa9whH2ptPpGD7H4",
       alt: "Gestión de tareas ilustración",
@@ -21,6 +24,7 @@ const Functionalities: React.FC = () => {
     {
       id: 2,
       title: "Tableros Ágiles",
+      description: "Visualiza el flujo de trabajo de tu equipo con tableros Kanban y Scrum intuitivos. Arrastra y suelta tareas entre columnas, gestiona sprints, y obtén una vista clara del progreso del proyecto en tiempo real.",
       image:
         "https://wac-cdn.atlassian.com/dam/jcr:fd5762d3-aa6d-4be9-a55b-8d1f1cf420fb/Screen_Unlimited%20Private%20Repos%20-%20Browser.png?cdnVersion=3002",
       alt: "Tablero ágil ilustración",
@@ -28,6 +32,7 @@ const Functionalities: React.FC = () => {
     {
       id: 3,
       title: "Métricas",
+      description: "Obtén insights valiosos sobre el rendimiento de tu equipo. Analiza la velocidad de entrega, tiempos de ciclo, y burndown charts. Toma decisiones basadas en datos para mejorar continuamente tus procesos.",
       image:
         "https://vilmanunez.com/wp-content/uploads/2014/03/analiticas-newsletter.png",
       alt: "Métricas ilustración",
@@ -35,74 +40,121 @@ const Functionalities: React.FC = () => {
   ];
 
   return (
-    <section id="funcionalidades" className="bg-white px-4 py-16 min-h-screen flex items-center">
-      <div className="max-w-7xl mx-auto w-full">
+    <section id="funcionalidades" className="bg-[#F8F9FA] px-4 py-16 min-h-screen flex items-center">
+      <div className="max-w-[1280px] mx-auto w-full">
         <div className="text-left mb-4">
           <span className="text-[#FFAB00] text-lg font-bold tracking-wider">
-            Funcionalidades
+            __ Funcionalidades
           </span>
         </div>
 
-        <h2 className="text-3xl lg:text-4xl xl:text-5xl font-bold text-[#172B4D] text-left mb-16 leading-tight">
-          Lo que distingue a "KUSKA"
+        <h2 className="text-3xl lg:text-4xl font-bold text-[#172B4D] text-left mb-16 leading-tight">
+          Lo que distingue a "Kuska"
         </h2>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 lg:gap-12 items-start">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8 items-stretch">
           {features.map((feature) => {
             const isSelected = selected === feature.id;
+            const isFlipped = flipped === feature.id;
 
             return (
               <div
                 key={feature.id}
                 onClick={() => setSelected(feature.id)}
-                className={`rounded-2xl p-8 cursor-pointer transition-all shadow-sm hover:shadow-lg flex flex-col items-start ${
-                  isSelected
-                    ? "bg-[#4931A9] text-white shadow-lg lg:-translate-y-2"
-                    : "bg-[#F4F5F7] text-[#172B4D]"
-                }`}
+                className="perspective-1000 h-[450px]"
               >
                 <div
-                  className={`text-sm font-medium mb-2 tracking-wide ${
-                    isSelected ? "text-white/70" : "text-[#7A869A]"
+                  className={`relative w-full h-full transition-transform duration-500 transform-style-3d ${
+                    isFlipped ? "rotate-y-180" : ""
                   }`}
+                  style={{
+                    transformStyle: "preserve-3d",
+                    transform: isFlipped ? "rotateY(180deg)" : "rotateY(0deg)",
+                  }}
                 >
-                  0{feature.id}
-                </div>
-
-                <h3
-                  className={`font-semibold text-xl mb-6 leading-snug ${
-                    isSelected ? "text-white" : "text-[#172B4D]"
-                  }`}
-                >
-                  {feature.title}
-                </h3>
-
-                <div
-                  className={`h-40 w-full rounded-xl mb-6 flex items-center justify-center overflow-hidden ${
-                    isSelected
-                      ? "bg-white/10 border border-white/20"
-                      : "bg-white"
-                  }`}
-                >
-                  <img
-                    src={feature.image}
-                    alt={feature.alt}
-                    className={`h-full w-full object-cover transition-opacity duration-300 ${
-                      isSelected ? "opacity-100" : "opacity-90"
+                  {/* Frente de la tarjeta */}
+                  <div
+                    className={`absolute w-full h-full backface-hidden rounded-3xl p-6 cursor-pointer transition-all duration-300 flex flex-col items-start ${
+                      isSelected
+                        ? "bg-[#4931A9] text-white shadow-xl scale-105"
+                        : "bg-white text-[#172B4D] shadow-md hover:shadow-lg"
                     }`}
-                    loading="lazy"
-                  />
-                </div>
+                    style={{ backfaceVisibility: "hidden" }}
+                  >
+                    <div
+                      className={`text-xs font-medium mb-3 tracking-wide ${
+                        isSelected ? "text-white/60" : "text-[#7A869A]"
+                      }`}
+                    >
+                      0{feature.id}
+                    </div>
 
-                {isSelected ? (
-                  <button className="bg-[#FFAB00] hover:bg-[#e59900] text-white text-sm font-semibold px-6 py-3 rounded-full transition-all hover:scale-105">
-                    Ver
-                  </button>
-                ) : (
-                  <button className="text-[#4931A9] text-sm font-semibold hover:underline transition-all">
-                    Ver
-                  </button>
-                )}
+                    <h3
+                      className={`font-bold text-lg mb-4 leading-snug ${
+                        isSelected ? "text-white" : "text-[#172B4D]"
+                      }`}
+                    >
+                      {feature.title}
+                    </h3>
+
+                    {/* Imagen */}
+                    <div className={`w-full h-48 rounded-2xl overflow-hidden mb-auto ${
+                      isSelected ? "opacity-90" : "opacity-100"
+                    }`}>
+                      <img
+                        src={feature.image}
+                        alt={feature.alt}
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+
+                    <div className="w-full mt-6">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setFlipped(isFlipped ? null : feature.id);
+                        }}
+                        className={isSelected
+                          ? "bg-[#FFAB00] hover:bg-[#e59900] text-white text-sm font-semibold px-8 py-3 rounded-full transition-all hover:scale-105 w-full"
+                          : "border-2 border-[#172B4D] text-[#172B4D] text-sm font-semibold px-8 py-3 rounded-full transition-all hover:bg-[#172B4D] hover:text-white w-full"
+                        }
+                      >
+                        Ver
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Reverso de la tarjeta */}
+                  <div
+                    className="absolute w-full h-full backface-hidden rounded-3xl p-6 bg-[#4931A9] text-white shadow-xl flex flex-col"
+                    style={{
+                      backfaceVisibility: "hidden",
+                      transform: "rotateY(180deg)",
+                    }}
+                  >
+                    <div className="text-xs font-medium mb-3 tracking-wide text-white/60">
+                      0{feature.id}
+                    </div>
+
+                    <h3 className="font-bold text-lg mb-4 leading-snug text-white">
+                      {feature.title}
+                    </h3>
+
+                    <p className="text-white/90 text-sm leading-relaxed mb-auto">
+                      {feature.description}
+                    </p>
+
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setFlipped(null);
+                      }}
+                      className="bg-[#FFAB00] hover:bg-[#e59900] text-white text-sm font-semibold px-8 py-3 rounded-full transition-all hover:scale-105 w-full mt-6"
+                    >
+                      Volver
+                    </button>
+                  </div>
+                </div>
               </div>
             );
           })}

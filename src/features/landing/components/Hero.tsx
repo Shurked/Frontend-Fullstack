@@ -2,80 +2,67 @@ import React from "react";
 
 const Hero: React.FC = () => {
   return (
-    <section className="relative bg-[#4931A9] overflow-hidden min-h-screen">
-      {/* Imagen de la derecha - Oculta en móviles (lg:block) */}
-      <div className="hidden lg:block absolute top-0 right-0 w-1/4 h-[90vh] z-40">
-        <div className="bg-[#F4F5F7] w-full h-full rounded-bl-3xl shadow-lg overflow-hidden">
+    <section className="relative bg-[#4931A9] overflow-hidden min-h-screen flex justify-center">
+      {/* Main Container with max-width */}
+      <div className="relative w-full max-w-[1280px]">
+        {/* Right Image Container - 35% of max-width */}
+        <div className="hidden lg:block absolute top-0 right-0 w-[35%] h-[80vh] z-10 overflow-hidden rounded-bl-[60px]">
           <img
             src="/trabajo-equipo.jpg"
             alt="Ilustración principal"
             className="w-full h-full object-cover"
           />
         </div>
-      </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-20 pb-20 relative z-10">
-        <div className="flex items-center min-h-[calc(100vh-200px)] lg:pr-[26%]">
+        {/* Content Container - Full width to allow form to extend over image */}
+        <div className="w-full px-8 lg:px-16 py-20 relative z-20">
+          <div className="flex items-center min-h-[calc(100vh-10rem)]">
+            {/* Left Content - constrained to 65% but form can extend beyond */}
+            <div className="text-white" style={{ maxWidth: '65%' }}>
+              <h1 className="text-5xl lg:text-6xl font-bold leading-tight mb-6">
+                Conecte equipos,<br />
+                proyectos y tareas con<br />
+                Kuska.
+              </h1>
 
-          {/* Left Content */}
-          <div className="text-white max-w-2xl w-full">
-            <h1 className="text-4xl sm:text-5xl lg:text-5xl xl:text-6xl font-bold leading-tight mb-6">
-              Conecta equipos,<br />
-              proyectos y tareas con
-              <span className="relative inline-block">
-                "KUSKA"
-                <svg
-                  className="absolute -bottom-2 left-0 w-full h-2"
-                  viewBox="0 0 100 8"
-                  fill="none"
-                >
-                  <path
-                    d="M0 4 Q25 0 50 4 T100 4"
-                    stroke="#FFAB00"
-                    strokeWidth="4"
-                    fill="none"
-                  />
-                </svg>
-              </span>
-            </h1>
+              <p className="text-xl text-white/90 mb-10">
+                Regístrate para disfrutar de "" completamente
+              </p>
 
-            <p className="text-lg sm:text-xl lg:text-xl text-white/90 mb-8 max-w-lg leading-relaxed">
-              Regístrate para disfrutar de "KUSKA" completamente
-            </p>
-
-            <form
-              className="flex w-full max-w-md mb-10"
-              onSubmit={e => {
-                e.preventDefault();
-                const email = (e.currentTarget.elements.namedItem('email') as HTMLInputElement)?.value;
-                if (email && email.endsWith('@gmail.com')) {
-                  window.location.href = `auth/login?email=${encodeURIComponent(email)}`;
-                } else {
-                  window.location.href = 'auth/login';
-                }
-              }}
-            >
-              <input
-                type="email"
-                name="email"
-                placeholder="Ingresa tu email..."
-                className="flex-1 px-4 sm:px-5 py-2 sm:py-3 rounded-l-full bg-white text-[#172B4D] placeholder-[#7A869A] outline-none text-sm sm:text-base"
-              />
-              <button
-                type="submit"
-                className="bg-[#FFAB00] hover:bg-[#FF9900] transition-colors px-4 sm:px-6 rounded-r-full flex items-center justify-center"
+              <form
+                className="flex items-center w-[135%] relative z-30"
+                onSubmit={e => {
+                  e.preventDefault();
+                  const email = (e.currentTarget.elements.namedItem('email') as HTMLInputElement)?.value;
+                  if (email && email.endsWith('@gmail.com')) {
+                    window.location.href = `auth/login?email=${encodeURIComponent(email)}`;
+                  } else {
+                    window.location.href = 'auth/login';
+                  }
+                }}
               >
-                <svg width="18" height="18" className="sm:w-[22px] sm:h-[22px]" fill="none" viewBox="0 0 24 24">
-                  <path
-                    d="M5 12h14M13 6l6 6-6 6"
-                    stroke="#fff"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                </svg>
-              </button>
-            </form>
+                <input
+                  type="email"
+                  name="email"
+                  placeholder="Ingresa tu email..."
+                  className="flex-1 px-6 py-4 rounded-full bg-white text-[#172B4D] placeholder-gray-400 outline-none text-base border-none shadow-lg pr-24"
+                />
+                <button
+                  type="submit"
+                  className="absolute right-0 bg-[#FFAB00] hover:bg-[#FF9900] transition-colors w-25 h-14 rounded-full flex items-center justify-center shadow-lg"
+                >
+                  <svg width="24" height="24" fill="none" viewBox="0 0 24 24">
+                    <path
+                      d="M5 12h14M13 6l6 6-6 6"
+                      stroke="#fff"
+                      strokeWidth="2.5"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
+                </button>
+              </form>
+            </div>
           </div>
         </div>
       </div>
