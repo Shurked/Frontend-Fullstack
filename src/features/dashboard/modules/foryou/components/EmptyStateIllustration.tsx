@@ -4,7 +4,6 @@ const EmptyStateIllustration: React.FC = () => (
   <div className="flex flex-col items-center justify-center py-16">
     <div className="relative mb-8">
       <svg width="200" height="150" viewBox="0 0 200 150" className="text-[#4931A9]">
-        {/* Mantener todo el SVG original */}
         <ellipse cx="100" cy="120" rx="60" ry="15" fill="#E8E4F8" opacity="0.5" />
         <ellipse cx="85" cy="90" rx="25" ry="35" fill="#4931A9" opacity="0.8" />
         <ellipse cx="65" cy="75" rx="12" ry="20" fill="#4931A9" opacity="0.9" transform="rotate(-30 65 75)" />

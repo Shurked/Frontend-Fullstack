@@ -1,30 +1,36 @@
 import React from 'react';
+import { CheckCircle2, Clock, ListChecks, AlertCircle, TrendingUp, TrendingDown } from 'lucide-react';
 
 interface StatCardProps {
   title: string;
   value: number;
-  icon: string;
+  icon: React.ReactNode;
   trend?: string;
   trendType?: 'positive' | 'negative' | 'neutral';
+  color: string;
 }
 
-const StatCard: React.FC<StatCardProps> = ({ title, value, icon, trend, trendType = 'positive' }) => (
-  <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-6 hover:shadow-md transition-shadow">
-    <div className="flex items-center justify-between">
-      <div>
-        <p className="text-sm font-medium text-[#7A869A] mb-1">{title}</p>
-        <p className="text-2xl font-bold text-[#172B4D]">{value}</p>
+const StatCard: React.FC<StatCardProps> = ({ title, value, icon, trend, trendType = 'positive', color }) => (
+  <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
+    <div className="flex items-start justify-between">
+      <div className="flex-1">
+        <p className="text-sm font-medium text-gray-600 mb-2">{title}</p>
+        <p className="text-3xl font-bold text-gray-900 mb-2">{value}</p>
         {trend && (
-          <p className={`text-xs mt-1 ${
-            trendType === 'positive' ? 'text-[#36B37E]' :
-            trendType === 'negative' ? 'text-[#FF7452]' :
-            'text-[#4931A9]'
+          <div className={`flex items-center gap-1 text-xs font-medium ${
+            trendType === 'positive' ? 'text-green-600' :
+            trendType === 'negative' ? 'text-red-600' :
+            'text-gray-600'
           }`}>
-            {trend}
-          </p>
+            {trendType === 'positive' && <TrendingUp className="w-3 h-3" />}
+            {trendType === 'negative' && <TrendingDown className="w-3 h-3" />}
+            <span>{trend}</span>
+          </div>
         )}
       </div>
-      <div className="text-2xl">{icon}</div>
+      <div className="rounded-lg p-3" style={{ backgroundColor: `${color}15` }}>
+        <div style={{ color }}>{icon}</div>
+      </div>
     </div>
   </div>
 );
@@ -35,39 +41,38 @@ interface StatsGridProps {
     projectsInProgress: number;
     tasksCompleted: number;
     overdueTasks: number;
-    productivityScore: number;
-    meetingHours: number;
-    codeCommits: number;
-    collaborationScore: number;
+    teamMembers?: number;
   };
 }
 
 const StatsGrid: React.FC<StatsGridProps> = ({ stats }) => {
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
       <StatCard
         title="Proyectos Completados"
         value={stats.projectsCompleted}
-        icon="🎯"
-        trend="+2 este mes"
+        icon={<CheckCircle2 className="w-6 h-6" />}
+        color="#10b981"
       />
       <StatCard
         title="En Progreso"
         value={stats.projectsInProgress}
-        icon="🚀"
+        icon={<Clock className="w-6 h-6" />}
+        color="#4931A9"
       />
       <StatCard
         title="Tareas Completadas"
         value={stats.tasksCompleted}
-        icon="✅"
-        trend="+8 esta semana"
+        icon={<ListChecks className="w-6 h-6" />}
+        color="#3b82f6"
       />
       <StatCard
-        title="Tareas Pendientes"
+        title="Tareas Vencidas"
         value={stats.overdueTasks}
-        icon="⚠️"
-        trend="+1 pendiente"
-        trendType="negative"
+        icon={<AlertCircle className="w-6 h-6" />}
+        color="#ef4444"
+        trend={stats.overdueTasks > 0 ? "Requiere atención" : "Al día"}
+        trendType={stats.overdueTasks > 0 ? "negative" : "positive"}
       />
     </div>
   );
