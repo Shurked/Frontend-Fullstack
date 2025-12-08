@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { 
   ArrowLeft, 
@@ -9,6 +9,8 @@ import {
   MoreVertical
 } from 'lucide-react';
 import { AddLinkModal, CreateTeamModal } from '../modals';
+import api from '../../../../../auth/services/axios.config';
+import { toast } from 'react-hot-toast';
 
 interface TeamMember {
   id: string;
@@ -44,56 +46,103 @@ const TeamDetail: React.FC = () => {
   const [isEditTeamModalOpen, setIsEditTeamModalOpen] = useState(false);
   const [showMemberOptions, setShowMemberOptions] = useState<string | null>(null);
   
-  // Datos de ejemplo del equipo
-  const [team] = useState<Team>({
-    id: teamId || '1',
-    name: 'Plataforma de Desarrollo',
-    description: 'Equipo encargado del desarrollo de la plataforma principal y sus funcionalidades core.',
-    color: 'bg-blue-500',
-    createdAt: '15 de Marzo, 2024',
-    members: [
-      {
-        id: '1',
-        name: 'Ana García',
-        role: 'Team Lead',
-        status: 'online'
-      },
-      {
-        id: '2',
-        name: 'Carlos López',
-        role: 'Frontend Developer',
-        status: 'online'
-      },
-      {
-        id: '3',
-        name: 'María Rodriguez',
-        role: 'Backend Developer',
-        status: 'busy'
-      },
-      {
-        id: '4',
-        name: 'Luis González',
-        role: 'UI/UX Designer',
-        status: 'offline'
-      }
-    ],
-    pinnedLinks: [
-      {
-        id: '1',
-        title: 'Documentación del Proyecto',
-        url: 'https://docs.example.com',
-        description: 'Guías y documentación técnica'
-      },
-      {
-        id: '2',
-        title: 'Figma - Diseños UI',
-        url: 'https://figma.com/project',
-        description: 'Diseños y prototipos actuales'
-      }
-    ]
-  });
+  // Estado del equipo cargado desde API
+  const [team, setTeam] = useState<Team | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [pinnedLinks, setPinnedLinks] = useState<PinnedLink[]>([]);
 
-  const [pinnedLinks, setPinnedLinks] = useState(team.pinnedLinks);
+  // Cargar datos del equipo
+  useEffect(() => {
+    const loadTeam = async () => {
+      if (!teamId) return;
+      
+      try {
+        setLoading(true);
+        const resp = await api.get(`/api/teams/${teamId}`);
+        const teamData = resp?.data?.data?.team;
+        
+        if (teamData) {
+          const mappedTeam: Team = {
+            id: teamData.id,
+            name: teamData.name,
+            description: teamData.description || '',
+            color: 'bg-blue-500',
+            createdAt: new Date(teamData.createdAt).toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' }),
+            members: teamData.members?.map((m: any) => ({
+              id: m.id,
+              name: m.name,
+              role: m.role,
+              avatar: m.avatar,
+              status: m.status === 'conectado' ? 'online' : m.status === 'ausente' ? 'busy' : 'offline'
+            })) || [],
+            pinnedLinks: teamData.links?.map((link: string, idx: number) => {
+              try {
+                const url = new URL(link);
+                return {
+                  id: `link-${idx}`,
+                  title: url.hostname.replace('www.', ''),
+                  url: link,
+                  description: ''
+                };
+              } catch {
+                return {
+                  id: `link-${idx}`,
+                  title: link,
+                  url: link,
+                  description: ''
+                };
+              }
+            }) || []
+          };
+          
+          setTeam(mappedTeam);
+          setPinnedLinks(mappedTeam.pinnedLinks);
+        }
+      } catch (err: any) {
+        console.error('Failed to load team', err);
+        toast.error(err?.response?.data?.message || 'No se pudo cargar el equipo');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadTeam();
+
+    // Refresh team data every 30 seconds to update presence status
+    const intervalId = setInterval(() => {
+      loadTeam();
+    }, 30000);
+
+    return () => clearInterval(intervalId);
+  }, [teamId]);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-full">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#4931A9] mx-auto mb-4"></div>
+          <p className="text-gray-600">Cargando equipo...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!team) {
+    return (
+      <div className="flex items-center justify-center h-full">
+        <div className="text-center">
+          <Users className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+          <h3 className="text-lg font-medium text-gray-900 mb-2">Equipo no encontrado</h3>
+          <button
+            onClick={() => navigate('/dashboard/teams')}
+            className="text-[#4931A9] hover:text-[#3f2890]"
+          >
+            Volver a Equipos
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   const getStatusColor = (status: TeamMember['status']) => {
     switch (status) {
@@ -113,16 +162,45 @@ const TeamDetail: React.FC = () => {
     }
   };
 
-  const handleAddLink = (linkData: { title: string; url: string; description?: string }) => {
-    const newLink: PinnedLink = {
-      id: Date.now().toString(),
-      ...linkData
-    };
-    setPinnedLinks(prev => [...prev, newLink]);
+  const handleAddLink = async (linkData: { title: string; url: string; description?: string }) => {
+    if (!team) return;
+
+    try {
+      const newLink: PinnedLink = {
+        id: Date.now().toString(),
+        ...linkData
+      };
+      
+      const updatedLinks = [...pinnedLinks, newLink];
+      
+      // Update in server
+      const linksArray = updatedLinks.map(l => l.url);
+      await api.put(`/api/teams/${team.id}`, { links: linksArray });
+      
+      setPinnedLinks(updatedLinks);
+      toast.success('Link agregado correctamente');
+    } catch (err: any) {
+      console.error('Failed to add link', err);
+      toast.error(err?.response?.data?.message || 'Error al agregar link');
+    }
   };
 
-  const handleRemoveLink = (linkId: string) => {
-    setPinnedLinks(prev => prev.filter(link => link.id !== linkId));
+  const handleRemoveLink = async (linkId: string) => {
+    if (!team) return;
+
+    try {
+      const updatedLinks = pinnedLinks.filter(link => link.id !== linkId);
+      
+      // Update in server
+      const linksArray = updatedLinks.map(l => l.url);
+      await api.put(`/api/teams/${team.id}`, { links: linksArray });
+      
+      setPinnedLinks(updatedLinks);
+      toast.success('Link eliminado');
+    } catch (err: any) {
+      console.error('Failed to remove link', err);
+      toast.error(err?.response?.data?.message || 'Error al eliminar link');
+    }
   };
 
   return (

@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import { io } from 'socket.io-client';
 import { 
   Search, 
   Send, 
@@ -51,6 +52,8 @@ type RightPanelView = 'members' | 'shared';
 const ChatTab: React.FC = () => {
   const [selectedChat, setSelectedChat] = useState<string>('1');
   const [message, setMessage] = useState('');
+  const [messagesState, setMessagesState] = useState<ChatMessage[]>([]);
+  const socketRef = useRef<any>(null);
   const [userStatus, setUserStatus] = useState<UserStatus>('online');
   const [rightPanelView, setRightPanelView] = useState<RightPanelView>('shared');
   const [showStatusDropdown, setShowStatusDropdown] = useState(false);
@@ -66,9 +69,8 @@ const ChatTab: React.FC = () => {
     }
   ];
 
-  const messages: ChatMessage[] = [
-    // Chat inicialmente vacío como en la imagen
-  ];
+  // initial messages come from state
+  const messages = messagesState;
 
   const teamMembers: TeamMember[] = [
     {
@@ -109,11 +111,70 @@ const ChatTab: React.FC = () => {
   const handleSendMessage = (e: React.FormEvent) => {
     e.preventDefault();
     if (message.trim()) {
-      // Aquí enviarías el mensaje
-      console.log('Sending message:', message);
+      const payload = {
+        conversationId: selectedChat,
+        clientMsgId: `${Date.now()}-${Math.random().toString(36).slice(2,8)}`,
+        content: message.trim(),
+      };
+
+      // Optimistic UI
+      const tempMsg: ChatMessage = {
+        id: payload.clientMsgId,
+        sender: 'Tú',
+        message: payload.content,
+        timestamp: new Date().toLocaleTimeString(),
+      };
+      setMessagesState((s) => [...s, tempMsg]);
+
+      // Emit to server
+      if (socketRef.current) {
+        socketRef.current.emit('send_message', payload, (ack: any) => {
+          if (ack && ack.ok) {
+            // replace temp id with real id
+            setMessagesState((s) => s.map(m => m.id === payload.clientMsgId ? { ...m, id: ack.id } : m));
+          }
+        });
+      }
+
       setMessage('');
     }
   };
+
+  useEffect(() => {
+    // create socket
+    const API_URL = (import.meta as any).env?.VITE_API_URL || 'http://localhost:3000';
+    const socket = io(API_URL, { auth: { /* token if needed */ } });
+    socketRef.current = socket;
+
+    socket.on('connect', () => {
+      console.log('socket connected', socket.id);
+    });
+
+    socket.on('new_message', (msg: any) => {
+      // adapt server message to ChatMessage
+      const incoming: ChatMessage = {
+        id: msg.id,
+        sender: msg.userId || 'Desconocido',
+        message: msg.content,
+        timestamp: new Date(msg.createdAt).toLocaleTimeString(),
+      };
+      setMessagesState((s) => [...s, incoming]);
+    });
+
+    return () => {
+      socket.disconnect();
+      socketRef.current = null;
+    };
+  }, []);
+
+  useEffect(() => {
+    // Join selected conversation room
+    if (!socketRef.current) return;
+    socketRef.current.emit('join_conversation', { conversationId: selectedChat });
+    return () => {
+      if (socketRef.current) socketRef.current.emit('leave_conversation', { conversationId: selectedChat });
+    };
+  }, [selectedChat]);
 
   return (
     <div className="flex h-full bg-gray-50">

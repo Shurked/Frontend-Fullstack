@@ -1,21 +1,63 @@
 import React, { useState } from 'react';
+import { toast } from 'react-hot-toast';
 import { X } from 'lucide-react';
+import api from '../../../../../auth/services/axios.config';
 
 interface AddPersonModalProps {
   isOpen: boolean;
   onClose: () => void;
+  onAdded?: (added: { id?: string; name?: string; email?: string; avatar?: string }[]) => void;
 }
 
-const AddPersonModal: React.FC<AddPersonModalProps> = ({ isOpen, onClose }) => {
+const AddPersonModal: React.FC<AddPersonModalProps> = ({ isOpen, onClose, onAdded }) => {
   const [inviteInput, setInviteInput] = useState('');
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (inviteInput.trim()) {
-      // Aquí se enviaría la invitación
-      console.log('Sending invitation to:', inviteInput);
-      onClose();
-      setInviteInput('');
+      (async () => {
+        try {
+          const resp = await api.post('/api/people/invite', { input: inviteInput });
+          const processed = resp.data?.data?.processed || [];
+
+          // For each processed entry that matches an existing user, try to create friendship
+          const created: any[] = [];
+          const alreadyFriends: any[] = [];
+          for (const p of processed) {
+            if (p.exists && p.userId) {
+              try {
+                const r = await api.post('/api/people/friends', { friendId: p.userId });
+                const payload = r?.data?.data;
+                if (payload?.created) {
+                  const f = payload.friend;
+                  created.push({ id: f.id, name: f.name, email: f.email, avatar: f.avatar });
+                } else if (payload && payload.created === false) {
+                  // already friends
+                  alreadyFriends.push({ id: p.userId, display: p.display || p.input || p.email || p.name });
+                }
+              } catch (err) {
+                // ignore individual failures
+                console.warn('Could not add friend for', p, err);
+              }
+            }
+          }
+
+          if (onAdded && created.length) onAdded(created);
+
+          // UX feedback
+          if (created.length > 0) {
+            toast.success(`Añadidos: ${created.map(c => c.name || c.email).join(', ')}`);
+          }
+          if (alreadyFriends.length > 0) {
+            toast(`Ya son amigos: ${alreadyFriends.map(a => a.display).join(', ')}`);
+          }
+        } catch (err) {
+          console.error('Invite failed', err);
+        } finally {
+          onClose();
+          setInviteInput('');
+        }
+      })();
     }
   };
 

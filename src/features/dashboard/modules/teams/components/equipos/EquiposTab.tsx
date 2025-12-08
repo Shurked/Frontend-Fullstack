@@ -1,7 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Plus, Users } from 'lucide-react';
 import { CreateTeamModal } from '../modals';
+import api from '../../../../../auth/services/axios.config';
+import { toast } from 'react-hot-toast';
 
 interface Team {
   id: string;
@@ -10,42 +12,46 @@ interface Team {
   members: number;
   color: string;
   initials: string;
+  createdAt?: string;
 }
 
 const EquiposTab: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const navigate = useNavigate();
+  const [teams, setTeams] = useState<Team[]>([]);
 
-  // Datos de ejemplo basados en el diseño
-  const [teams] = useState<Team[]>([
-    {
-      id: '1',
-      name: 'Plataforma de Desarrollo',
-      description: 'Equipo encargado del desarrollo de la plataforma principal',
-      members: 5,
-      color: 'bg-blue-500',
-      initials: 'PD'
-    },
-    {
-      id: '2',
-      name: 'Marketing Digital',
-      description: 'Equipo de marketing y comunicación digital',
-      members: 3,
-      color: 'bg-green-500',
-      initials: 'MD'
-    },
-    {
-      id: '3',
-      name: 'Diseño UX/UI',
-      description: 'Equipo de diseño de experiencia e interfaz de usuario',
-      members: 4,
-      color: 'bg-purple-500',
-      initials: 'UX'
+  const loadTeams = async () => {
+    try {
+      const resp = await api.get('/api/teams');
+      const items = resp?.data?.data?.teams || [];
+      // Map to Team shape
+      const mapped: Team[] = items.map((t: any) => ({ 
+        id: t.id, 
+        name: t.name, 
+        description: t.description || '', 
+        members: t.membersCount || 0, 
+        color: 'bg-blue-500', 
+        initials: (t.name || '').split(' ').map((s: string) => s[0]).slice(0,2).join('').toUpperCase(),
+        createdAt: t.createdAt 
+      }));
+      setTeams(mapped);
+    } catch (err) {
+      console.error('Failed to load teams', err);
+      toast.error('No se pudieron cargar los equipos');
     }
-  ]);
+  };
 
   const handleTeamClick = (teamId: string) => {
     navigate(`/dashboard/teams/equipo/${teamId}`);
+  };
+
+  useEffect(() => {
+    loadTeams();
+  }, []);
+
+  const handleCreated = (_newTeam: any) => {
+    // Refresh list after creation
+    loadTeams();
   };
 
   return (
@@ -87,6 +93,13 @@ const EquiposTab: React.FC = () => {
               {/* Descripción */}
               <p className="text-sm text-gray-600 line-clamp-2 mb-3">{team.description}</p>
               
+              {/* Fecha de creación */}
+              {team.createdAt && (
+                <p className="text-xs text-gray-500 mb-3">
+                  Creado el {new Date(team.createdAt).toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' })}
+                </p>
+              )}
+              
               {/* Botón ver más */}
               <div className="flex justify-end">
                 <span className="text-xs text-[#4931A9] font-medium hover:text-[#3f2890]">
@@ -119,6 +132,7 @@ const EquiposTab: React.FC = () => {
       <CreateTeamModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
+        onSave={handleCreated as any}
       />
     </div>
   );
