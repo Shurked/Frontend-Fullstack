@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { io } from 'socket.io-client';
 import { 
   Search, 
   Send, 
@@ -8,15 +7,24 @@ import {
   FileText, 
   ChevronDown,
   Download,
-  MoreVertical
+  MoreVertical,
+  Trash2,
+  Upload,
+  Edit2,
+  X
 } from 'lucide-react';
+import api from '../../../../../auth/services/axios.config';
+import { toast } from 'react-hot-toast';
 
 interface ChatMessage {
   id: string;
   sender: string;
+  senderId: string;
   message: string;
+  messageType: string;
   timestamp: string;
   avatar?: string;
+  isEdited?: boolean;
 }
 
 interface ChatRoom {
@@ -27,6 +35,7 @@ interface ChatRoom {
   unreadCount?: number;
   avatar?: string;
   type: 'group' | 'direct';
+  teamId?: string;
 }
 
 interface TeamMember {
@@ -44,180 +53,403 @@ interface SharedFile {
   size: string;
   sharedBy: string;
   timestamp: string;
+  fileUrl?: string;
+  uploadedById?: string;
 }
 
-type UserStatus = 'online' | 'busy' | 'away';
 type RightPanelView = 'members' | 'shared';
 
 const ChatTab: React.FC = () => {
-  const [selectedChat, setSelectedChat] = useState<string>('1');
+  const [selectedChat, setSelectedChat] = useState<string>('');
   const [message, setMessage] = useState('');
   const [messagesState, setMessagesState] = useState<ChatMessage[]>([]);
-  const socketRef = useRef<any>(null);
-  const [userStatus, setUserStatus] = useState<UserStatus>('online');
+  const [chats, setChats] = useState<ChatRoom[]>([]);
+  const [sharedFiles, setSharedFiles] = useState<SharedFile[]>([]);
+  const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
+  const [loading, setLoading] = useState(true);
   const [rightPanelView, setRightPanelView] = useState<RightPanelView>('shared');
-  const [showStatusDropdown, setShowStatusDropdown] = useState(false);
+  const [currentUser, setCurrentUser] = useState<any>(null);
+  const [uploading, setUploading] = useState(false);
+  const [contextMenu, setContextMenu] = useState<{ messageId: string; x: number; y: number } | null>(null);
+  const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
+  const [editingContent, setEditingContent] = useState('');
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const contextMenuRef = useRef<HTMLDivElement>(null);
 
-  // Datos de ejemplo
-  const chats: ChatRoom[] = [
-    {
-      id: '1',
-      name: 'Proyecto de desarrollo',
-      lastMessage: 'Ningún mensaje',
-      timestamp: '11:13',
-      type: 'group'
-    }
-  ];
-
-  // initial messages come from state
-  const messages = messagesState;
-
-  const teamMembers: TeamMember[] = [
-    {
-      id: '1',
-      name: 'Jorge C. Bardales',
-      role: 'Administrador',
-      status: 'online'
-    }
-  ];
-
-  const sharedFiles: SharedFile[] = [
-    {
-      id: '1',
-      name: 'Organización del proyecto.pdf',
-      type: 'pdf',
-      size: '2.5 MB',
-      sharedBy: 'Jorge C. Bardales',
-      timestamp: 'Hace 2 horas'
-    }
-  ];
-
-  const statusOptions = [
-    { value: 'online', label: 'Disponible', color: 'bg-green-500' },
-    { value: 'busy', label: 'Ocupado', color: 'bg-red-500' },
-    { value: 'away', label: 'Ausente', color: 'bg-yellow-500' }
-  ];
-
-  const getStatusColor = (status: string) => {
-    const option = statusOptions.find(opt => opt.value === status);
-    return option ? option.color : 'bg-gray-400';
-  };
-
-  const getStatusLabel = (status: string) => {
-    const option = statusOptions.find(opt => opt.value === status);
-    return option ? option.label : 'Desconectado';
-  };
-
-  const handleSendMessage = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (message.trim()) {
-      const payload = {
-        conversationId: selectedChat,
-        clientMsgId: `${Date.now()}-${Math.random().toString(36).slice(2,8)}`,
-        content: message.trim(),
-      };
-
-      // Optimistic UI
-      const tempMsg: ChatMessage = {
-        id: payload.clientMsgId,
-        sender: 'Tú',
-        message: payload.content,
-        timestamp: new Date().toLocaleTimeString(),
-      };
-      setMessagesState((s) => [...s, tempMsg]);
-
-      // Emit to server
-      if (socketRef.current) {
-        socketRef.current.emit('send_message', payload, (ack: any) => {
-          if (ack && ack.ok) {
-            // replace temp id with real id
-            setMessagesState((s) => s.map(m => m.id === payload.clientMsgId ? { ...m, id: ack.id } : m));
-          }
-        });
-      }
-
-      setMessage('');
-    }
-  };
-
+  // Load user teams (channels)
   useEffect(() => {
-    // create socket
-    const API_URL = (import.meta as any).env?.VITE_API_URL || 'http://localhost:3000';
-    const socket = io(API_URL, { auth: { /* token if needed */ } });
-    socketRef.current = socket;
+    const loadChats = async () => {
+      try {
+        setLoading(true);
+        // Get user info
+        const userResp = await api.get('/api/auth/me');
+        const userData = userResp?.data?.data?.user;
+        console.log('User data:', userData);
+        setCurrentUser(userData);
 
-    socket.on('connect', () => {
-      console.log('socket connected', socket.id);
-    });
+        // Get user teams
+        const teamsResp = await api.get('/api/teams');
+        const teams = teamsResp?.data?.data?.teams || [];
+        console.log('Teams found:', teams);
 
-    socket.on('new_message', (msg: any) => {
-      // adapt server message to ChatMessage
-      const incoming: ChatMessage = {
-        id: msg.id,
-        sender: msg.userId || 'Desconocido',
-        message: msg.content,
-        timestamp: new Date(msg.createdAt).toLocaleTimeString(),
-      };
-      setMessagesState((s) => [...s, incoming]);
-    });
+        // For each team, get its channel
+        const chatPromises = teams.map(async (team: any) => {
+          try {
+            const channelsResp = await api.get(`/api/channels?teamId=${team.id}`);
+            const channels = channelsResp?.data?.data?.channels || [];
+            console.log(`Channels for team ${team.id}:`, channels);
+            if (channels.length > 0) {
+              const channel = channels[0];
+              return {
+                id: channel.id,
+                name: team.name,
+                lastMessage: channel.lastMessage || 'Ningún mensaje',
+                timestamp: new Date(channel.lastMessageTime).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }),
+                type: 'group' as const,
+                teamId: team.id
+              };
+            }
+          } catch (err) {
+            console.warn(`Failed to load channel for team ${team.id}`, err);
+          }
+          return null;
+        });
 
-    return () => {
-      socket.disconnect();
-      socketRef.current = null;
+        const chatsData = (await Promise.all(chatPromises)).filter(c => c !== null) as ChatRoom[];
+        console.log('Final chats data:', chatsData);
+        setChats(chatsData);
+
+        // Select first chat if available
+        if (chatsData.length > 0 && !selectedChat) {
+          setSelectedChat(chatsData[0].id);
+        }
+      } catch (err) {
+        console.error('Failed to load chats', err);
+        toast.error('Error al cargar los chats');
+      } finally {
+        setLoading(false);
+      }
     };
+
+    loadChats();
   }, []);
 
+  // Load messages when chat is selected
   useEffect(() => {
-    // Join selected conversation room
-    if (!socketRef.current) return;
-    socketRef.current.emit('join_conversation', { conversationId: selectedChat });
-    return () => {
-      if (socketRef.current) socketRef.current.emit('leave_conversation', { conversationId: selectedChat });
+    if (!selectedChat) return;
+
+    const loadMessages = async () => {
+      try {
+        const resp = await api.get(`/api/messages/channels/${selectedChat}/messages`);
+        const msgs = resp?.data?.data?.messages || [];
+        const mapped: ChatMessage[] = msgs.map((m: any) => ({
+          id: m.id,
+          sender: m.userName,
+          senderId: m.userId,
+          message: m.content,
+          messageType: m.messageType,
+          timestamp: new Date(m.createdAt).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }),
+          avatar: m.userAvatar,
+          isEdited: m.isEdited
+        }));
+        setMessagesState(mapped);
+      } catch (err) {
+        console.error('Failed to load messages', err);
+      }
     };
+
+    loadMessages();
+    
+    // Poll every 5 seconds for new messages (simple approach)
+    const interval = setInterval(loadMessages, 5000);
+    return () => clearInterval(interval);
   }, [selectedChat]);
+
+  // Load shared files
+  useEffect(() => {
+    if (!selectedChat) return;
+
+    const loadFiles = async () => {
+      try {
+        const resp = await api.get(`/api/messages/channels/${selectedChat}/files`);
+        const files = resp?.data?.data?.files || [];
+        const mapped: SharedFile[] = files.map((f: any) => ({
+          id: f.id,
+          name: f.fileName,
+          type: f.fileType.split('/')[1] || 'file',
+          size: `${(f.fileSize / 1024 / 1024).toFixed(2)} MB`,
+          sharedBy: f.uploadedBy,
+          timestamp: new Date(f.createdAt).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }),
+          fileUrl: f.fileUrl,
+          uploadedById: f.uploadedById
+        }));
+        setSharedFiles(mapped);
+      } catch (err) {
+        console.error('Failed to load files', err);
+      }
+    };
+
+    loadFiles();
+  }, [selectedChat]);
+
+  // Load team members and their presence
+  useEffect(() => {
+    if (!selectedChat) return;
+
+    const loadTeamMembers = async () => {
+      try {
+        const currentChat = chats.find(c => c.id === selectedChat);
+        if (!currentChat?.teamId) return;
+
+        // Get team details with members
+        const resp = await api.get(`/api/teams/${currentChat.teamId}`);
+        const team = resp?.data?.data?.team;
+        
+        console.log('Team members with presence:', team?.members);
+        
+        if (team?.members) {
+          const mapped: TeamMember[] = team.members.map((m: any) => ({
+            id: m.id,
+            name: m.name || 'Usuario',
+            role: m.role || 'Miembro',
+            status: m.status === 'conectado' ? 'online' : 
+                   m.status === 'ausente' ? 'away' : 
+                   m.status === 'ocupado' ? 'busy' : 'offline',
+            avatar: m.avatar
+          }));
+          setTeamMembers(mapped);
+        }
+      } catch (err) {
+        console.error('Failed to load team members', err);
+      }
+    };
+
+    loadTeamMembers();
+    
+    // Refresh members every 30 seconds for presence updates
+    const interval = setInterval(loadTeamMembers, 30000);
+    return () => clearInterval(interval);
+  }, [selectedChat, chats]);
+
+  // Close context menu on outside click
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (contextMenuRef.current && !contextMenuRef.current.contains(event.target as Node)) {
+        setContextMenu(null);
+      }
+    };
+
+    if (contextMenu) {
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => document.removeEventListener('mousedown', handleClickOutside);
+    }
+  }, [contextMenu]);
+
+  const getStatusColor = (status: string) => {
+    const colors = {
+      online: 'bg-green-500',
+      busy: 'bg-red-500',
+      away: 'bg-yellow-500',
+      offline: 'bg-gray-400'
+    };
+    return colors[status as keyof typeof colors] || 'bg-gray-400';
+  };
+
+  const handleSendMessage = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!message.trim() || !selectedChat) return;
+
+    try {
+      const payload = { content: message.trim() };
+      await api.post(`/api/messages/channels/${selectedChat}/messages`, payload);
+      
+      // Reload messages
+      const resp = await api.get(`/api/messages/channels/${selectedChat}/messages`);
+      const msgs = resp?.data?.data?.messages || [];
+      const mapped: ChatMessage[] = msgs.map((m: any) => ({
+        id: m.id,
+        sender: m.userName,
+        message: m.content,
+        timestamp: new Date(m.createdAt).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }),
+        avatar: m.userAvatar
+      }));
+      setMessagesState(mapped);
+      setMessage('');
+    } catch (err) {
+      console.error('Failed to send message', err);
+      toast.error('Error al enviar mensaje');
+    }
+  };
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !selectedChat) return;
+
+    try {
+      setUploading(true);
+      const formData = new FormData();
+      formData.append('file', file);
+
+      await api.post(`/api/messages/channels/${selectedChat}/files`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+
+      toast.success('Archivo subido correctamente');
+
+      // Reload files
+      const resp = await api.get(`/api/messages/channels/${selectedChat}/files`);
+      const files = resp?.data?.data?.files || [];
+      const mapped: SharedFile[] = files.map((f: any) => ({
+        id: f.id,
+        name: f.fileName,
+        type: f.fileType.split('/')[1] || 'file',
+        size: `${(f.fileSize / 1024 / 1024).toFixed(2)} MB`,
+        sharedBy: f.uploadedBy,
+        timestamp: new Date(f.createdAt).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }),
+        fileUrl: f.fileUrl,
+        uploadedById: f.uploadedById
+      }));
+      setSharedFiles(mapped);
+
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    } catch (err: any) {
+      console.error('Failed to upload file', err);
+      toast.error(err?.response?.data?.message || 'Error al subir archivo');
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const handleDeleteMessage = async (messageId: string, deleteForEveryone: boolean) => {
+    try {
+      await api.delete(`/api/messages/messages/${messageId}`, {
+        data: { deleteForEveryone }
+      });
+
+      toast.success(deleteForEveryone ? 'Mensaje eliminado para todos' : 'Mensaje eliminado');
+      setContextMenu(null);
+
+      // Reload messages
+      const resp = await api.get(`/api/messages/channels/${selectedChat}/messages`);
+      const msgs = resp?.data?.data?.messages || [];
+      const mapped: ChatMessage[] = msgs.map((m: any) => ({
+        id: m.id,
+        sender: m.userName,
+        senderId: m.userId,
+        message: m.content,
+        messageType: m.messageType,
+        timestamp: new Date(m.createdAt).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }),
+        avatar: m.userAvatar,
+        isEdited: m.isEdited
+      }));
+      setMessagesState(mapped);
+    } catch (err: any) {
+      console.error('Failed to delete message', err);
+      toast.error(err?.response?.data?.message || 'Error al eliminar mensaje');
+    }
+  };
+
+  const handleEditMessage = (messageId: string, currentContent: string) => {
+    setEditingMessageId(messageId);
+    setEditingContent(currentContent);
+    setContextMenu(null);
+  };
+
+  const handleSaveEdit = async (messageId: string) => {
+    if (!editingContent.trim()) return;
+
+    try {
+      await api.put(`/api/messages/messages/${messageId}`, {
+        content: editingContent.trim()
+      });
+
+      toast.success('Mensaje editado');
+      setEditingMessageId(null);
+      setEditingContent('');
+
+      // Reload messages
+      const resp = await api.get(`/api/messages/channels/${selectedChat}/messages`);
+      const msgs = resp?.data?.data?.messages || [];
+      const mapped: ChatMessage[] = msgs.map((m: any) => ({
+        id: m.id,
+        sender: m.userName,
+        senderId: m.userId,
+        message: m.content,
+        messageType: m.messageType,
+        timestamp: new Date(m.createdAt).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }),
+        avatar: m.userAvatar,
+        isEdited: m.isEdited
+      }));
+      setMessagesState(mapped);
+    } catch (err: any) {
+      console.error('Failed to edit message', err);
+      toast.error(err?.response?.data?.message || 'Error al editar mensaje');
+    }
+  };
+
+  const handleCancelEdit = () => {
+    setEditingMessageId(null);
+    setEditingContent('');
+  };
+
+  const handleDeleteFile = async (fileId: string, uploadedById: string, deleteForEveryone: boolean) => {
+    if (!currentUser || uploadedById !== currentUser.id) {
+      toast.error('Solo puedes eliminar tus propios archivos');
+      return;
+    }
+
+    try {
+      await api.delete(`/api/messages/files/${fileId}`, {
+        data: { deleteForEveryone }
+      });
+
+      toast.success(deleteForEveryone ? 'Archivo eliminado para todos' : 'Archivo eliminado');
+
+      // Reload files
+      const resp = await api.get(`/api/messages/channels/${selectedChat}/files`);
+      const files = resp?.data?.data?.files || [];
+      const mapped: SharedFile[] = files.map((f: any) => ({
+        id: f.id,
+        name: f.fileName,
+        type: f.fileType.split('/')[1] || 'file',
+        size: `${(f.fileSize / 1024 / 1024).toFixed(2)} MB`,
+        sharedBy: f.uploadedBy,
+        timestamp: new Date(f.createdAt).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' }),
+        fileUrl: f.fileUrl,
+        uploadedById: f.uploadedById
+      }));
+      setSharedFiles(mapped);
+    } catch (err) {
+      console.error('Failed to delete file', err);
+      toast.error('Error al eliminar archivo');
+    }
+  };
 
   return (
     <div className="flex h-full bg-gray-50">
+      {loading ? (
+        <div className="flex items-center justify-center flex-1">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#4931A9] mx-auto mb-4"></div>
+            <p className="text-gray-600">Cargando chats...</p>
+          </div>
+        </div>
+      ) : (
+        <>
       {/* Left Panel - Chat List */}
       <div className="w-80 bg-white border-r border-gray-200 flex flex-col">
-        {/* User Status Header */}
+        {/* User Header */}
         <div className="p-4 border-b border-gray-200">
           <div className="flex items-center space-x-3">
-            <div className="relative">
-              <div className="w-12 h-12 bg-orange-500 rounded-full flex items-center justify-center">
-                <span className="text-white font-medium">JC</span>
-              </div>
-              <div className={`absolute -bottom-1 -right-1 w-4 h-4 ${getStatusColor(userStatus)} rounded-full border-2 border-white`} />
+            <div className="w-12 h-12 bg-orange-500 rounded-full flex items-center justify-center">
+              <span className="text-white font-medium">
+                {currentUser?.completeName?.split(' ').map((n: string) => n[0]).join('') || 'U'}
+              </span>
             </div>
             <div className="flex-1">
-              <h3 className="font-semibold text-gray-900">Jorge C. Bardales</h3>
-              <div className="relative">
-                <button
-                  onClick={() => setShowStatusDropdown(!showStatusDropdown)}
-                  className="flex items-center space-x-1 text-sm text-gray-600 hover:text-gray-900"
-                >
-                  <span>{getStatusLabel(userStatus)}</span>
-                  <ChevronDown className="w-4 h-4" />
-                </button>
-                
-                {showStatusDropdown && (
-                  <div className="absolute top-6 left-0 w-40 bg-white border border-gray-200 rounded-lg shadow-lg z-10">
-                    {statusOptions.map((option) => (
-                      <button
-                        key={option.value}
-                        onClick={() => {
-                          setUserStatus(option.value as UserStatus);
-                          setShowStatusDropdown(false);
-                        }}
-                        className="w-full flex items-center space-x-2 px-3 py-2 text-left hover:bg-gray-50 first:rounded-t-lg last:rounded-b-lg"
-                      >
-                        <div className={`w-3 h-3 ${option.color} rounded-full`} />
-                        <span className="text-sm text-gray-700">{option.label}</span>
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
+              <h3 className="font-semibold text-gray-900">{currentUser?.completeName || currentUser?.email || 'Usuario'}</h3>
             </div>
           </div>
         </div>
@@ -320,8 +552,8 @@ const ChatTab: React.FC = () => {
         </div>
 
         {/* Messages Area */}
-        <div className="flex-1 overflow-y-auto p-4">
-          {messages.length === 0 ? (
+        <div className="flex-1 overflow-y-auto p-4 relative">
+          {messagesState.length === 0 ? (
             <div className="flex items-center justify-center h-full">
               <div className="text-center text-gray-500">
                 <Users className="w-12 h-12 text-gray-300 mx-auto mb-3" />
@@ -331,22 +563,132 @@ const ChatTab: React.FC = () => {
             </div>
           ) : (
             <div className="space-y-4">
-              {messages.map((msg) => (
-                <div key={msg.id} className="flex items-start space-x-3">
-                  <div className="w-8 h-8 bg-gray-300 rounded-full flex items-center justify-center">
-                    <span className="text-xs font-medium text-gray-700">
-                      {msg.sender.split(' ').map(n => n[0]).join('')}
-                    </span>
-                  </div>
-                  <div className="flex-1">
-                    <div className="flex items-center space-x-2 mb-1">
-                      <span className="font-medium text-gray-900">{msg.sender}</span>
-                      <span className="text-xs text-gray-500">{msg.timestamp}</span>
+              {messagesState.map((msg) => {
+                const isMyMessage = currentUser && msg.senderId === currentUser.id;
+                
+                // Parse file data if message type is file
+                let fileData = null;
+                if (msg.messageType === 'archivo') {
+                  try {
+                    fileData = JSON.parse(msg.message);
+                  } catch (e) {
+                    console.error('Failed to parse file data', e);
+                  }
+                }
+
+                return (
+                  <div 
+                    key={msg.id} 
+                    className="flex items-start space-x-3 group"
+                  >
+                    <div className="w-8 h-8 bg-gray-300 rounded-full flex items-center justify-center flex-shrink-0">
+                      <span className="text-xs font-medium text-gray-700">
+                        {msg.sender.split(' ').map(n => n[0]).join('')}
+                      </span>
                     </div>
-                    <p className="text-gray-700">{msg.message}</p>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center space-x-2 mb-1">
+                        <span className="font-medium text-gray-900">{msg.sender}</span>
+                        <span className="text-xs text-gray-500">{msg.timestamp}</span>
+                        {msg.isEdited && <span className="text-xs text-gray-400 italic">(editado)</span>}
+                      </div>
+                      
+                      {editingMessageId === msg.id ? (
+                        <div className="flex items-center space-x-2">
+                          <input
+                            type="text"
+                            value={editingContent}
+                            onChange={(e) => setEditingContent(e.target.value)}
+                            className="flex-1 px-3 py-1 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#4931A9] focus:border-transparent text-sm"
+                            autoFocus
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') handleSaveEdit(msg.id);
+                              if (e.key === 'Escape') handleCancelEdit();
+                            }}
+                          />
+                          <button
+                            onClick={() => handleSaveEdit(msg.id)}
+                            className="p-1 text-green-600 hover:text-green-700"
+                          >
+                            <Send className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={handleCancelEdit}
+                            className="p-1 text-red-600 hover:text-red-700"
+                          >
+                            <X className="w-4 h-4" />
+                          </button>
+                        </div>
+                      ) : fileData ? (
+                        <div className="bg-gray-50 border border-gray-200 rounded-lg p-3 max-w-md">
+                          <div className="flex items-center space-x-3">
+                            <div className="w-10 h-10 bg-[#4931A9] rounded-lg flex items-center justify-center flex-shrink-0">
+                              <FileText className="w-5 h-5 text-white" />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-medium text-gray-900 truncate">
+                                {fileData.fileName}
+                              </p>
+                              <p className="text-xs text-gray-500">
+                                {(fileData.fileSize / 1024 / 1024).toFixed(2)} MB
+                              </p>
+                            </div>
+                            <a
+                              href={`http://localhost:3000${fileData.fileUrl}`}
+                              download={fileData.fileName}
+                              className="p-2 text-[#4931A9] hover:bg-[#4931A9]/10 rounded-lg transition-colors"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              <Download className="w-5 h-5" />
+                            </a>
+                          </div>
+                        </div>
+                      ) : (
+                        <p className="text-gray-700">{msg.message}</p>
+                      )}
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
+            </div>
+          )}
+
+          {/* Context Menu */}
+          {contextMenu && (
+            <div
+              ref={contextMenuRef}
+              className="fixed bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50"
+              style={{ left: contextMenu.x, top: contextMenu.y }}
+            >
+              <button
+                onClick={() => {
+                  const msg = messagesState.find(m => m.id === contextMenu.messageId);
+                  if (msg && msg.messageType !== 'archivo') {
+                    handleEditMessage(contextMenu.messageId, msg.message);
+                  } else {
+                    toast.error('No se pueden editar archivos');
+                    setContextMenu(null);
+                  }
+                }}
+                className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 flex items-center space-x-2"
+              >
+                <Edit2 className="w-4 h-4" />
+                <span>Editar</span>
+              </button>
+              <button
+                onClick={() => handleDeleteMessage(contextMenu.messageId, false)}
+                className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 flex items-center space-x-2"
+              >
+                <Trash2 className="w-4 h-4" />
+                <span>Eliminar para mí</span>
+              </button>
+              <button
+                onClick={() => handleDeleteMessage(contextMenu.messageId, true)}
+                className="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50 flex items-center space-x-2"
+              >
+                <Trash2 className="w-4 h-4" />
+                <span>Eliminar para todos</span>
+              </button>
             </div>
           )}
         </div>
@@ -354,11 +696,19 @@ const ChatTab: React.FC = () => {
         {/* Message Input */}
         <div className="p-4 border-t border-gray-200">
           <form onSubmit={handleSendMessage} className="flex items-center space-x-3">
+            <input
+              ref={fileInputRef}
+              type="file"
+              className="hidden"
+              onChange={handleFileUpload}
+            />
             <button
               type="button"
-              className="p-2 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={uploading}
+              className="p-2 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100 disabled:opacity-50"
             >
-              <Paperclip className="w-5 h-5" />
+              {uploading ? <Upload className="w-5 h-5 animate-pulse" /> : <Paperclip className="w-5 h-5" />}
             </button>
             <input
               type="text"
@@ -369,7 +719,8 @@ const ChatTab: React.FC = () => {
             />
             <button
               type="submit"
-              className="p-2 bg-[#4931A9] text-white rounded-lg hover:bg-[#3f2890] transition-colors"
+              disabled={!message.trim()}
+              className="p-2 bg-[#4931A9] text-white rounded-lg hover:bg-[#3f2890] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <Send className="w-5 h-5" />
             </button>
@@ -425,25 +776,58 @@ const ChatTab: React.FC = () => {
               
               <div className="space-y-2">
                 <h4 className="font-medium text-gray-900">Archivos Compartidos</h4>
-                {sharedFiles.map((file) => (
-                  <div key={file.id} className="flex items-center space-x-3 p-3 border border-gray-200 rounded-lg hover:bg-gray-50">
+                {sharedFiles.length > 0 ? sharedFiles.map((file) => (
+                  <div key={file.id} className="flex items-center space-x-3 p-3 border border-gray-200 rounded-lg hover:bg-gray-50 group">
                     <div className="w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center">
                       <FileText className="w-5 h-5 text-red-600" />
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="font-medium text-gray-900 truncate">{file.name}</p>
                       <p className="text-sm text-gray-500">Compartido por {file.sharedBy}</p>
+                      <p className="text-xs text-gray-400">{file.size}</p>
                     </div>
-                    <button className="p-1 text-gray-400 hover:text-gray-600">
-                      <Download className="w-4 h-4" />
+                    <div className="flex items-center space-x-1">
+                      <a
+                        href={`${(import.meta as any).env?.VITE_API_URL || 'http://localhost:3000'}${(file as any).fileUrl}`}
+                        download
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="p-1 text-gray-400 hover:text-blue-600"
+                      >
+                        <Download className="w-4 h-4" />
+                      </a>
+                      {currentUser && (file as any).uploadedById === currentUser.id && (
+                        <button
+                          onClick={() => {
+                            const deleteForAll = window.confirm('¿Eliminar para todos? (Cancelar = solo para mí)');
+                            handleDeleteFile(file.id, (file as any).uploadedById, deleteForAll);
+                          }}
+                          className="p-1 text-gray-400 hover:text-red-600 opacity-0 group-hover:opacity-100"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                )) : (
+                  <div className="text-center py-8 text-gray-500">
+                    <FileText className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+                    <p className="text-sm">No hay archivos compartidos</p>
+                    <button
+                      onClick={() => fileInputRef.current?.click()}
+                      className="mt-2 text-[#4931A9] hover:text-[#3f2890] text-sm font-medium"
+                    >
+                      Subir el primero
                     </button>
                   </div>
-                ))}
+                )}
               </div>
             </div>
           )}
         </div>
       </div>
+      </>
+      )}
     </div>
   );
 };

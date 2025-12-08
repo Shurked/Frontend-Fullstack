@@ -31,12 +31,8 @@ export const usePresence = () => {
 
     // Set status to offline when user leaves or closes tab
     const handleBeforeUnload = () => {
-      // Use sendBeacon for reliability on page unload
-      const token = localStorage.getItem('accessToken');
-      if (token) {
-        const blob = new Blob([JSON.stringify({ status: 'desconectado' })], { type: 'application/json' });
-        navigator.sendBeacon('/api/presence/update', blob);
-      }
+      // Use synchronous request for reliability on page unload
+      updatePresence('desconectado');
     };
 
     // Handle tab visibility change
@@ -49,12 +45,28 @@ export const usePresence = () => {
       }
     };
 
+    // Handle page focus/blur
+    const handleFocus = () => {
+      updatePresence('conectado');
+      sendHeartbeat();
+    };
+
+    const handleBlur = () => {
+      updatePresence('ausente');
+    };
+
     window.addEventListener('beforeunload', handleBeforeUnload);
+    window.addEventListener('pagehide', handleBeforeUnload);
     document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('focus', handleFocus);
+    window.addEventListener('blur', handleBlur);
 
     return () => {
       window.removeEventListener('beforeunload', handleBeforeUnload);
+      window.removeEventListener('pagehide', handleBeforeUnload);
       document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('focus', handleFocus);
+      window.removeEventListener('blur', handleBlur);
       updatePresence('desconectado');
       clearInterval(intervalId);
     };
