@@ -20,7 +20,6 @@ const TasksNotifications: React.FC<TasksNotificationsProps> = ({
   return (
     <div className="px-6 pb-6">
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
-        {/* Tareas Recientes */}
         <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-6">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-semibold text-[#172B4D]">Tareas Recientes</h2>
@@ -39,7 +38,6 @@ const TasksNotifications: React.FC<TasksNotificationsProps> = ({
           </div>
         </div>
 
-        {/* Notificaciones */}
         <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-6">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-semibold text-[#172B4D]">

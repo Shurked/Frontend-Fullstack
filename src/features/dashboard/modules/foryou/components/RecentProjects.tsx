@@ -1,65 +1,103 @@
 import React from 'react';
-
-interface Project {
-  id: number;
-  name: string;
-  type: string;
-  quickAccess: string;
-  completedElements: number;
-  openElements: number;
-  board: string;
-  progress?: number;
-  members?: number;
-  lastUpdate?: string;
-}
+import { CheckCircle2, Clock, ArrowRight } from 'lucide-react';
+import type { ProjectWithStats } from '../types';
 
 interface RecentProjectsProps {
-  projects: Project[];
+  projects: ProjectWithStats[];
   onViewAll?: () => void;
+  onViewProject?: (projectId: string) => void;
 }
 
-const ProjectCard: React.FC<{ project: Project }> = ({ project }) => (
-  <div className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm hover:shadow-md transition-shadow">
-    <div className="flex items-start justify-between">
-      <div className="flex-1">
-        <h3 className="font-semibold text-[#172B4D] text-lg mb-1">{project.name}</h3>
-        <p className="text-[#7A869A] text-sm mb-4">{project.type}</p>
-
-        <div className="space-y-2 mb-4">
-          <p className="text-[#4931A9] text-sm font-medium cursor-pointer hover:text-[#372189]">
-            {project.quickAccess}
-          </p>
-
-          <div className="flex items-center space-x-4 text-sm text-[#7A869A]">
-            <span>Elementos realizados <span className="font-medium text-[#172B4D]">{project.completedElements}</span></span>
-            <span>Elementos abiertos <span className="font-medium text-[#172B4D]">{project.openElements}</span></span>
+const ProjectCard: React.FC<{ project: ProjectWithStats; onViewProject?: (projectId: string) => void }> = ({ project, onViewProject }) => {
+  const openElements = project.taskStats.total - project.taskStats.completed;
+  const projectCode = project.code || 'PRJ';
+  const projectInitial = projectCode.split('-')[0] || projectCode.substring(0, 3).toUpperCase();
+  
+  return (
+    <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm hover:shadow-lg transition-all duration-300 hover:-translate-y-0.5">
+      <div className="flex items-start justify-between mb-4">
+        <div className="flex-1">
+          <div className="flex items-center gap-3 mb-2">
+            <div className="w-10 h-10 rounded-lg flex items-center justify-center text-white font-bold text-sm" style={{ backgroundColor: '#4931A9' }}>
+              {projectInitial}
+            </div>
+            <div>
+              <h3 className="font-bold text-gray-900 text-lg">{project.name}</h3>
+              {project.code && <p className="text-gray-500 text-xs">{project.code}</p>}
+            </div>
           </div>
-        </div>
+          
+          <div className="inline-block px-3 py-1 bg-purple-50 text-purple-700 text-xs font-medium rounded-full mb-4">
+            {project.type}
+          </div>
 
-        <button className="text-[#4931A9] text-sm font-medium hover:text-[#372189] transition-colors">
-          {project.board}
-        </button>
+          <div className="grid grid-cols-2 gap-4 mb-4">
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 rounded-lg bg-green-50 flex items-center justify-center">
+                <CheckCircle2 className="w-4 h-4 text-green-600" />
+              </div>
+              <div>
+                <p className="text-xs text-gray-500">Completadas</p>
+                <p className="text-lg font-bold text-gray-900">{project.taskStats.completed}</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center">
+                <Clock className="w-4 h-4 text-blue-600" />
+              </div>
+              <div>
+                <p className="text-xs text-gray-500">Abiertas</p>
+                <p className="text-lg font-bold text-gray-900">{openElements}</p>
+              </div>
+            </div>
+          </div>
+
+          {project.progress !== undefined && (
+            <div className="mb-4">
+              <div className="flex items-center justify-between text-xs font-medium text-gray-600 mb-2">
+                <span>Progreso del proyecto</span>
+                <span className="text-gray-900">{project.progress}%</span>
+              </div>
+              <div className="w-full bg-gray-200 rounded-full h-2">
+                <div 
+                  className="h-2 rounded-full transition-all duration-500" 
+                  style={{ width: `${project.progress}%`, backgroundColor: '#4931A9' }}
+                ></div>
+              </div>
+            </div>
+          )}
+
+          <button 
+            onClick={() => onViewProject?.(project.id)}
+            className="w-full py-2 px-4 text-white font-medium rounded-lg hover:opacity-90 transition-opacity" 
+            style={{ backgroundColor: '#4931A9' }}
+          >
+            Ver Tablero
+          </button>
+        </div>
       </div>
     </div>
-  </div>
-);
+  );
+};
 
-const RecentProjects: React.FC<RecentProjectsProps> = ({ projects, onViewAll }) => {
+const RecentProjects: React.FC<RecentProjectsProps> = ({ projects, onViewAll, onViewProject }) => {
   return (
     <>
-      <div className="flex items-center justify-between mb-4">
-        <h2 className="text-xl font-semibold text-[#172B4D]">Proyectos Recientes</h2>
+      <div className="flex items-center justify-between mb-6">
+        <h2 className="text-2xl font-bold text-gray-900">Proyectos Recientes</h2>
         <button 
           onClick={onViewAll}
-          className="text-[#4931A9] text-sm font-medium hover:text-[#372189] transition-colors"
+          className="flex items-center gap-2 px-4 py-2 text-white font-medium rounded-lg hover:opacity-90 transition-opacity"
+          style={{ backgroundColor: '#4931A9' }}
         >
-          Todos los proyectos
+          <span>Todos los proyectos</span>
+          <ArrowRight className="w-4 h-4" />
         </button>
       </div>
 
-      <div className="mb-6 space-y-4">
+      <div className="mb-8 grid grid-cols-1 gap-6">
         {projects.map((project) => (
-          <ProjectCard key={project.id} project={project} />
+          <ProjectCard key={project.id} project={project} onViewProject={onViewProject} />
         ))}
       </div>
     </>

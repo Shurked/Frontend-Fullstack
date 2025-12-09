@@ -22,31 +22,32 @@ const NavigationTabs: React.FC<NavigationTabsProps> = ({
   ]
 }) => {
   return (
-    <div className="border-b border-gray-200">
-      <nav className="flex space-x-8">
-        {tabs.map((tab) => (
-          <button
-            key={tab.id}
-            onClick={() => onTabChange(tab.id)}
-            className={`py-3 px-1 relative ${
-              activeTab === tab.id
-                ? 'text-[#4931A9] border-b-2 border-[#4931A9]'
-                : 'text-[#7A869A] hover:text-[#172B4D]'
-            } font-medium text-sm transition-colors`}
-          >
+    <div className="flex space-x-2 border-b-2 border-gray-200">
+      {tabs.map((tab) => (
+        <button
+          key={tab.id}
+          onClick={() => onTabChange(tab.id)}
+          className={`px-6 py-3 text-sm font-semibold transition-all duration-200 relative rounded-t-lg ${
+            activeTab === tab.id
+              ? 'text-white -mb-0.5 shadow-md'
+              : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+          }`}
+          style={activeTab === tab.id ? { backgroundColor: '#4931A9' } : {}}
+        >
+          <span className="flex items-center gap-2">
             {tab.label}
             {tab.count > 0 && (
-              <span className={`ml-2 px-2 py-1 rounded-full text-xs ${
-                activeTab === tab.id 
-                  ? 'bg-[#4931A9] text-white' 
-                  : 'bg-[#F4F5F7] text-[#7A869A]'
+              <span className={`px-2.5 py-0.5 rounded-full text-xs font-bold ${
+                activeTab === tab.id
+                  ? 'bg-white text-gray-900'
+                  : 'bg-gray-200 text-gray-700'
               }`}>
                 {tab.count}
               </span>
             )}
-          </button>
-        ))}
-      </nav>
+          </span>
+        </button>
+      ))}
     </div>
   );
 };

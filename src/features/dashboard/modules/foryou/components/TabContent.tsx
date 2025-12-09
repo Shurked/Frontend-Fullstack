@@ -2,11 +2,12 @@ import React from 'react';
 import EmptyStateIllustration from '../components/EmptyStateIllustration';
 import TodayActivities from './TodayActivities';
 import BoardsTable from './BoardsTable';
+import type { Activity, FavoriteBoard } from '../types';
 
 interface TabContentProps {
   activeTab: string;
-  todayActivities?: any[];
-  boards?: any[];
+  todayActivities?: Activity[];
+  boards?: FavoriteBoard[];
 }
 
 const TabContent: React.FC<TabContentProps> = ({ 
