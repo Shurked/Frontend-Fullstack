@@ -11,10 +11,12 @@ import {
   Trash2,
   Upload,
   Edit2,
-  X
+  X,
+  Phone
 } from 'lucide-react';
 import api from '../../../../../auth/services/axios.config';
 import { toast } from 'react-hot-toast';
+import CallRoom from '../call/CallRoom';
 
 interface ChatMessage {
   id: string;
@@ -59,6 +61,13 @@ interface SharedFile {
 
 type RightPanelView = 'members' | 'shared';
 
+interface ActiveCallRoom {
+  id: string;
+  teamId: string;
+  createdAt: string;
+  participants: any[];
+}
+
 const ChatTab: React.FC = () => {
   const [selectedChat, setSelectedChat] = useState<string>('');
   const [message, setMessage] = useState('');
@@ -73,6 +82,8 @@ const ChatTab: React.FC = () => {
   const [contextMenu, setContextMenu] = useState<{ messageId: string; x: number; y: number } | null>(null);
   const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
   const [editingContent, setEditingContent] = useState('');
+  const [activeCallRoom, setActiveCallRoom] = useState<ActiveCallRoom | null>(null);
+  const [showCallRoom, setShowCallRoom] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const contextMenuRef = useRef<HTMLDivElement>(null);
 
@@ -228,6 +239,16 @@ const ChatTab: React.FC = () => {
     
     // Refresh members every 30 seconds for presence updates
     const interval = setInterval(loadTeamMembers, 30000);
+    return () => clearInterval(interval);
+  }, [selectedChat, chats]);
+
+  // Check for active call when chat changes
+  useEffect(() => {
+    if (!selectedChat) return;
+    checkActiveCall();
+    
+    // Refresh call status every 10 seconds
+    const interval = setInterval(checkActiveCall, 10000);
     return () => clearInterval(interval);
   }, [selectedChat, chats]);
 
@@ -394,6 +415,57 @@ const ChatTab: React.FC = () => {
     setEditingContent('');
   };
 
+  // Call functions
+  const createCallRoom = async () => {
+    const currentTeamId = chats.find(c => c.id === selectedChat)?.teamId;
+    if (!currentTeamId) {
+      toast.error('No se pudo identificar el equipo');
+      return;
+    }
+
+    try {
+      const response = await api.post('/api/calls/rooms', { teamId: currentTeamId });
+      const newRoom = response?.data?.data?.room;
+      setActiveCallRoom(newRoom);
+      toast.success('Sala de llamada creada');
+    } catch (err: any) {
+      console.error('Failed to create call room', err);
+      toast.error(err?.response?.data?.message || 'Error al crear sala de llamada');
+    }
+  };
+
+  const checkActiveCall = async () => {
+    const currentTeamId = chats.find(c => c.id === selectedChat)?.teamId;
+    if (!currentTeamId) return;
+
+    try {
+      const response = await api.get(`/api/calls/rooms/team/${currentTeamId}`);
+      const room = response?.data?.data?.room;
+      setActiveCallRoom(room || null);
+    } catch (err: any) {
+      // No active call is okay
+      if (err?.response?.status !== 404) {
+        console.error('Failed to check active call', err);
+      }
+    }
+  };
+
+  const joinCall = async () => {
+    if (!activeCallRoom) return;
+
+    try {
+      setShowCallRoom(true);
+    } catch (err: any) {
+      console.error('Failed to join call', err);
+      toast.error(err?.response?.data?.message || 'Error al unirse a la llamada');
+    }
+  };
+
+  const handleCloseCall = () => {
+    setShowCallRoom(false);
+    checkActiveCall(); // Refresh call status
+  };
+
   const handleDeleteFile = async (fileId: string, uploadedById: string, deleteForEveryone: boolean) => {
     if (!currentUser || uploadedById !== currentUser.id) {
       toast.error('Solo puedes eliminar tus propios archivos');
@@ -548,8 +620,38 @@ const ChatTab: React.FC = () => {
                 </button>
               </div>
             </div>
+            <button
+              onClick={createCallRoom}
+              className="p-2 text-[#4931A9] hover:bg-[#4931A9]/10 rounded-lg transition-colors"
+              title="Iniciar llamada"
+            >
+              <Phone className="w-5 h-5" />
+            </button>
           </div>
         </div>
+
+        {/* Active Call Banner */}
+        {activeCallRoom && (
+          <div className="px-4 py-3 bg-green-50 border-b border-green-200">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-2">
+                <Phone className="w-5 h-5 text-green-600" />
+                <span className="text-sm font-medium text-green-800">
+                  Llamada en curso
+                </span>
+                <span className="text-xs text-green-600">
+                  {activeCallRoom.participants?.length || 0} participante(s)
+                </span>
+              </div>
+              <button
+                onClick={joinCall}
+                className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm font-medium"
+              >
+                Entrar a la llamada
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* Messages Area */}
         <div className="flex-1 overflow-y-auto p-4 relative">
@@ -827,6 +929,15 @@ const ChatTab: React.FC = () => {
         </div>
       </div>
       </>
+      )}
+
+      {/* Call Room Modal */}
+      {showCallRoom && activeCallRoom && (
+        <CallRoom
+          roomId={activeCallRoom.id}
+          teamId={activeCallRoom.teamId}
+          onClose={handleCloseCall}
+        />
       )}
     </div>
   );
