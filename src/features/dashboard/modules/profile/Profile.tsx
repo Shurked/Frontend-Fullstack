@@ -1,11 +1,19 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Briefcase, MapPin, Building, Phone, Edit, Save, X, User as UserIcon, Loader2, AlertCircle, Zap, Award } from 'lucide-react';
+import { useParams } from 'react-router-dom';
 import { useUserProfile } from './useProfile';
 import { validateProfileUpdate } from './validation';
 import type { UpdateProfileRequest } from './types';
+import api from '../../../auth/services/axios.config';
 
 const Profile: React.FC = () => {
-  const { profile, isLoading, error, updateProfile, isUpdating } = useUserProfile();
+  const { id: profileUserId } = useParams<{ id: string }>();
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  
+  // Determinar si es perfil propio o ajeno
+  const isOwnProfile = !profileUserId || profileUserId === currentUserId;
+  
+  const { profile, isLoading, error, updateProfile, isUpdating } = useUserProfile(profileUserId);
   const [isEditing, setIsEditing] = useState(false);
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
@@ -18,7 +26,22 @@ const Profile: React.FC = () => {
     avatar: '',
   });
 
-  React.useEffect(() => {
+  // Obtener el ID del usuario actual
+  useEffect(() => {
+    const fetchCurrentUser = async () => {
+      try {
+        const response = await api.get('/api/auth/me');
+        if (response.data?.data?.id) {
+          setCurrentUserId(response.data.data.id);
+        }
+      } catch (err) {
+        console.error('Error fetching current user:', err);
+      }
+    };
+    fetchCurrentUser();
+  }, []);
+
+  useEffect(() => {
     if (profile?.user) {
       setFormData({
         jobTitle: profile.user.jobTitle || '',
@@ -140,7 +163,7 @@ const Profile: React.FC = () => {
           <div className="absolute -bottom-24 -left-24 w-96 h-96 bg-white/5 rounded-full blur-3xl"></div>
           
           <div className="absolute top-6 right-6">
-            {!isEditing ? (
+            {isOwnProfile && !isEditing ? (
               <button 
                 onClick={() => setIsEditing(true)}
                 className="group flex items-center gap-2 px-5 py-3 bg-white/10 backdrop-blur-lg rounded-xl text-white hover:bg-white/20 transition-all duration-300 shadow-lg hover:shadow-xl border border-white/20"
@@ -148,7 +171,7 @@ const Profile: React.FC = () => {
                 <Edit className="w-4 h-4 group-hover:rotate-12 transition-transform duration-300" />
                 <span className="font-medium">Editar perfil</span>
               </button>
-            ) : (
+            ) : isOwnProfile && isEditing ? (
               <div className="flex gap-3">
                 <button 
                   onClick={handleSubmit}
@@ -175,7 +198,7 @@ const Profile: React.FC = () => {
                   <X className="w-4 h-4" />
                 </button>
               </div>
-            )}
+            ) : null}
           </div>
         </div>
         
@@ -336,6 +359,12 @@ const Profile: React.FC = () => {
                   </>
                 ) : (
                   <>
+                    {!isOwnProfile && (
+                      <div className="mb-4 bg-blue-50 border border-blue-200 text-blue-700 px-4 py-3 rounded-xl flex items-center gap-2">
+                        <UserIcon className="w-5 h-5" />
+                        <span className="text-sm font-medium">Estás viendo el perfil de {profile.user.completeName}</span>
+                      </div>
+                    )}
                     <div className="flex items-start space-x-3 p-3 rounded-xl hover:bg-gray-50 transition-colors">
                       <div className="w-8 h-8 rounded-lg bg-purple-100 flex items-center justify-center flex-shrink-0">
                         <Briefcase className="w-4 h-4 text-purple-600" />

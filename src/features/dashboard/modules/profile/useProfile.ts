@@ -2,12 +2,12 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getProfile, updateProfile } from './profile.service';
 import type { UpdateProfileRequest } from './types';
 
-export function useUserProfile() {
+export function useUserProfile(userId?: string) {
   const queryClient = useQueryClient();
 
   const profileQuery = useQuery({
-    queryKey: ['userProfile'],
-    queryFn: getProfile,
+    queryKey: userId ? ['userProfile', userId] : ['userProfile'],
+    queryFn: () => getProfile(userId),
     staleTime: 5 * 60 * 1000,
   });
 

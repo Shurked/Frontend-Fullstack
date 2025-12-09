@@ -1,8 +1,10 @@
 import { api } from '../../../auth/services/axios.config';
 import type { UserProfile, UpdateProfileRequest, ApiResponse, UserBasicInfo } from './types';
 
-export async function getProfile(): Promise<UserProfile> {
-  const response = await api.get<ApiResponse<UserProfile>>('/api/users/profile');
+export async function getProfile(userId?: string): Promise<UserProfile> {
+  // Si hay userId, obtener perfil de ese usuario; si no, obtener perfil propio
+  const endpoint = userId ? `/api/users/profile/${userId}` : '/api/users/profile';
+  const response = await api.get<ApiResponse<UserProfile>>(endpoint);
 
   if (!response.data.success || !response.data.data) {
     throw new Error('Failed to fetch user profile');
